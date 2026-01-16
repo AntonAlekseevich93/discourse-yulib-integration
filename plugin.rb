@@ -116,7 +116,13 @@ after_initialize do
           # Отдаем сохраненный профиль обратно фронту
           render json: {
             success: true,
-            yulib_profile: mock_backend_data
+            yulib_profile: {
+              user_id: mock_backend_data[:user_id],
+              email: mock_backend_data[:app_email],
+              username: mock_backend_data[:app_username], # Фронт ждет username, а не app_username
+              avatar: mock_backend_data[:user_avatar],    # Фронт ждет avatar, а не user_avatar
+              uuid: mock_backend_data[:user_uuid]         # Фронт ждет uuid, а не user_uuid
+            }
           }
         else
           render json: { success: false, error: "User not found" }, status: 404
