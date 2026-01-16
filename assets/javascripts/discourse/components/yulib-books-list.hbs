@@ -1,0 +1,29 @@
+{{#if this.groupedBooks.length}}
+    <div class="yulib-books-container">
+        {{#each this.groupedBooks as |group|}}
+            <div class="yulib-book-group">
+                <h4 class="yulib-group-title">{{group.statusTitle}}</h4>
+
+                <div class="yulib-book-grid">
+                    {{#each group.books as |book|}}
+                        <div class="yulib-book-card">
+                            <div class="book-cover">
+                                {{#if book.full_cover_url}}
+                                    <img src="{{book.full_cover_url}}" alt="{{book.book_name}}" loading="lazy" />
+                                {{else}}
+                                    <div class="no-cover">Нет обложки</div>
+                                {{/if}}
+                            </div>
+                            <div class="book-info">
+                                <div class="book-title" title="{{book.book_name}}">{{book.book_name}}</div>
+                                <div class="book-author" title="{{book.author_name}}">{{book.author_name}}</div>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            </div>
+        {{/each}}
+    </div>
+{{else}}
+    <p class="text-muted">В вашей библиотеке пока пусто.</p>
+{{/if}}

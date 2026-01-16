@@ -17,17 +17,39 @@ export default class YulibInterface extends Component {
   // Здесь теперь храним весь объект профиля
   @tracked yulibProfile = null;
 
+  @tracked books = [];
+  @tracked isLoadingBooks = false; // Отдельный флаг для загрузки книг
+
   constructor() {
     super(...arguments);
     // Пытаемся достать профиль из загруженного пользователя
     if (this.currentUser && this.currentUser.yulib_profile) {
       this.yulibProfile = this.currentUser.yulib_profile;
+      this.appEmail = this.currentUser.email;
+      // Если профиль есть — сразу грузим книги
+      this.fetchBooks();
+    } else {
+      this.appEmail = this.currentUser?.email || "";
     }
-    this.appEmail = this.currentUser.email;
   }
 
   get isLinked() {
     return !!this.yulibProfile;
+  }
+
+  // --- МЕТОД ЗАГРУЗКИ КНИГ ---
+  async fetchBooks() {
+    this.isLoadingBooks = true;
+    try {
+      const result = await ajax("/yulib/books");
+      if (result.success) {
+        this.books = result.books;
+      }
+    } catch (error) {
+      console.error("[YuLib] Failed to load books", error);
+    } finally {
+      this.isLoadingBooks = false;
+    }
   }
 
   @action

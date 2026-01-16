@@ -47,6 +47,19 @@ export default {
       }
     }
 
+    // ЗАГРУЗКА НОВОГО КОМПОНЕНТА (BOOKS LIST)
+    let YulibBooksListComponent, YulibBooksListTemplate;
+    try {
+      YulibBooksListComponent = require("discourse/plugins/yulib-integration/discourse/components/yulib-books-list").default;
+      YulibBooksListTemplate = require("discourse/plugins/yulib-integration/discourse/components/yulib-books-list").default; // Ember ищет шаблон там же, если это collocated component, но лучше проверить путь templates/components/...
+    } catch (e) {
+      // Для шаблона путь может отличаться
+      try {
+        YulibBooksListTemplate = require("discourse/plugins/yulib-integration/discourse/templates/components/yulib-books-list").default;
+      } catch(e2) { console.error("Books List Template missing"); }
+    }
+    // КОНЕЦ НОВОГО КОМПОНЕНТА (BOOKS LIST)
+
     withPluginApi("0.8.7", (api) => {
       const registry = api.container.registry;
 

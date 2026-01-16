@@ -1,0 +1,88 @@
+.yulib-books-container {
+  margin-top: 20px;
+}
+
+.yulib-book-group {
+  margin-bottom: 30px;
+
+  .yulib-group-title {
+    font-size: 1.2em;
+    border-bottom: 1px solid var(--primary-low);
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    color: var(--primary-high);
+    font-weight: bold;
+  }
+}
+
+.yulib-book-grid {
+  display: grid;
+  // Адаптивная сетка
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.yulib-book-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--secondary); // Цвет фона карточки (обычно белый)
+
+  .book-cover {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    background-color: var(--primary-low-mid);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: translateY(-3px); // Эффект при наведении
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .no-cover {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 0.8em;
+      color: var(--primary-medium);
+      text-align: center;
+      padding: 5px;
+    }
+  }
+
+  .book-info {
+    font-size: 0.9em;
+    line-height: 1.2;
+
+    .book-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 3px;
+      // Обрезаем длинный текст
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .book-author {
+      font-size: 0.85em;
+      color: var(--primary-medium);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}

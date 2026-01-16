@@ -5,7 +5,7 @@
 # http://localhost:4200/yulib/books
 require 'net/http'
 require 'uri'
-
+register_asset 'stylesheets/common/yulib.scss'
 after_initialize do
 
   class ::YulibBook < ActiveRecord::Base
@@ -15,20 +15,33 @@ after_initialize do
     def full_cover_url
       return nil if image_name.blank?
 
-      # 1. Берем хост из настроек
-      host = SiteSetting.yulib_books_s3_host
-      return image_name if host.blank? # Если хост не задан, отдаем только имя
+      # 1. Определяем, используем ли маленькие обложки
+      use_small = SiteSetting.yulib_use_small_covers
 
-      # Гарантируем, что хост заканчивается на /
-      base = host.end_with?("/") ? host : "#{host}/"
+      if use_small
+        # Берем хост для маленьких обложек
+        host = SiteSetting.yulib_small_cover_books_s3_host
 
-      # 2. Проверяем наличие папки
-      if image_folder_id.present?
-        # Если папка есть: host/folder_id/image_name
-        "#{base}#{image_folder_id}/#{image_name}"
+        # Логика замены расширения на .webp (аналог kotlin substringBeforeLast)
+        # Если в имени есть точка, берем всё до последней точки, иначе берем всё имя
+        base_name = image_name.include?('.') ? image_name.rpartition('.').first : image_name
+        final_image_name = "#{base_name}.webp"
       else
-        # Если папки нет: host/images/image_name
-        "#{base}images/#{image_name}"
+        # Берем обычный хост и оставляем оригинальное имя
+        host = SiteSetting.yulib_cover_books_s3_host
+        final_image_name = image_name
+      end
+
+      return final_image_name if host.blank? # Если хост не задан, отдаем только имя
+
+      # 2. Гарантируем, что хост заканчивается на /
+      base_url = host.end_with?("/") ? host : "#{host}/"
+
+      # 3. Формируем финальный путь с учетом папки
+      if image_folder_id.present?
+        "#{base_url}#{image_folder_id}/#{final_image_name}"
+      else
+        "#{base_url}images/#{final_image_name}"
       end
     end
   end
@@ -85,10 +98,10 @@ after_initialize do
 
         books = YulibBook.where(user_id: user.id)
 
-        # Исправляем ошибку сериализации: явно указываем поля
-        render json: {
-          success: true,
-          books: books.as_json(only: [
+        # Мы проходим по каждой книге и добавляем URL обложки вручную
+        books_with_covers = books.map do |book|
+          # 1. Берем стандартные поля
+          book_hash = book.as_json(only: [
             :book_id, :author_id, :author_name, :book_name, :user_cover_url,
             :page_count, :isbn, :reading_status, :age_restriction, :book_genre_id,
             :image_name, :start_date, :end_date, :timestamp_of_creating,
@@ -96,6 +109,16 @@ after_initialize do
             :description, :image_folder_id, :main_book_id, :publication_year,
             :timestamp_of_reading_done
           ])
+
+          # 2. Добавляем вычисляемую ссылку
+          book_hash['full_cover_url'] = book.full_cover_url
+
+          book_hash
+        end
+
+        render json: {
+          success: true,
+          books: books_with_covers
         }
       end
 
@@ -253,12 +276,22 @@ after_initialize do
 
           if response.is_a?(Net::HTTPSuccess)
             # 2. Если бэк подтвердил (200 OK), чистим поля в Discourse
+            # --- УДАЛЕНИЕ КНИГ ---
+            # Удаляем все книги, связанные с этим пользователем
+            deleted_count = YulibBook.where(user_id: user.id).delete_all
+            Rails.logger.info "🗑️ [YuLib] Deleted #{deleted_count} books for user #{user.id}"
+            # --- ОЧИСТКА ПОЛЕЙ ЮЗЕРА ---
             user.custom_fields['yulib_external_user_id']      = nil
             user.custom_fields['yulib_app_email']    = nil
             user.custom_fields['yulib_token']        = nil
             user.custom_fields['yulib_app_username'] = nil
             user.custom_fields['yulib_user_avatar']   = nil
             user.custom_fields['yulib_user_uuid']     = nil
+
+            # Важно: сбрасываем время последней синхронизации,
+            # чтобы при новой привязке скачались все данные (since=0)
+            user.custom_fields['yulib_last_sync_at']     = nil
+
             user.save_custom_fields
 
             Rails.logger.info "🔗 [YuLib] Unlinked: Forum(#{forum_email}) <-> App(#{app_email})"

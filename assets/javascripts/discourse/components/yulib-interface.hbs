@@ -24,6 +24,18 @@
                 />
             </div>
 
+            <hr>
+
+            {{!-- 2. БЛОК БИБЛИОТЕКИ --}}
+            <h3>Моя библиотека</h3>
+
+            {{#if this.isLoadingBooks}}
+                <div class="spinner">Загрузка...</div>
+            {{else}}
+            {{!-- ВОТ НАШ НОВЫЙ КОМПОНЕНТ --}}
+                <YulibBooksList @books={{this.books}} />
+            {{/if}}
+
         {{else}}
 
             {{#if this.codeSent}}
