@@ -2,7 +2,7 @@
 # about: External App Integration (Full Profile)
 # version: 0.5.0
 # authors: YuLib Team
-
+# http://localhost:4200/yulib/books
 require 'net/http'
 require 'uri'
 
@@ -75,8 +75,11 @@ after_initialize do
         user = current_user
         last_sync = user.custom_fields['yulib_last_sync_at'].to_i
 
-        # Синхронизация раз в 24 часа
-        if (Time.now.to_i - last_sync) > 86400
+        # Берем интервал из настроек
+        sync_interval = get_sync_interval_seconds
+
+        # Проверяем: пора ли обновлять?
+        if (Time.now.to_i - last_sync) > sync_interval
           sync_books_from_ktor(user, last_sync)
         end
 
@@ -163,6 +166,22 @@ after_initialize do
 
         # Выполняем массовый вставку/обновление по паре (user_id + book_id)
         YulibBook.upsert_all(records, unique_by: [:user_id, :book_id])
+      end
+
+      def get_sync_interval_seconds
+        setting = SiteSetting.yulib_sync_interval.to_s.downcase
+        total_seconds = 0
+
+        # Регулярка ищет числа с h или m (например, 10h, 30m)
+        hours = setting.scan(/(\d+)h/).flatten.first.to_i
+        minutes = setting.scan(/(\d+)m/).flatten.first.to_i
+
+        total_seconds = (hours * 3600) + (minutes * 60)
+
+        # Если ввели ерунду или 0, сбрасываем на дефолт (24 часа)
+        total_seconds > 0 ? total_seconds : 86400
+      rescue
+        86400 # Дефолт при любой ошибке
       end
 
       def request_code
