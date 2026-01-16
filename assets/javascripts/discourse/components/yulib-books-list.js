@@ -1,8 +1,8 @@
 import Component from "@glimmer/component";
+import { service } from "@ember/service"; // Подключаем сервис
 
 export default class YulibBooksList extends Component {
-    // Ember автоматически кладет переданные аргументы в this.args
-    // Поэтому обращаемся к книгам через this.args.books
+    @service siteSettings; // Внедряем настройки сайта
 
     get groupedBooks() {
         const books = this.args.books;
@@ -11,11 +11,12 @@ export default class YulibBooksList extends Component {
             return [];
         }
 
-        // Группируем книги по полю reading_status
-        const groups = books.reduce((acc, book) => {
-            // Если статуса нет, кидаем в "other"
-            const status = book.reading_status || "other";
+        // 1. Получаем лимит из настроек (или 30 по умолчанию, если настройка не пришла)
+        const limit = this.siteSettings.yulib_max_books_per_status || 30;
 
+        // 2. Группируем
+        const groups = books.reduce((acc, book) => {
+            const status = book.reading_status || "other";
             if (!acc[status]) {
                 acc[status] = [];
             }
@@ -23,18 +24,17 @@ export default class YulibBooksList extends Component {
             return acc;
         }, {});
 
-        // Превращаем в массив для отрисовки
-        // Сортируем статусы, чтобы 'reading' был выше 'done' (опционально)
+        // 3. Формируем массив и ОБРЕЗАЕМ (slice) лишние книги
         return Object.keys(groups)
-            .sort() // Можно убрать или написать свою сортировку
+            .sort()
             .map((status) => ({
-                statusTitle: this.formatStatus(status), // Для заголовка
-                books: groups[status],
+                statusTitle: this.formatStatus(status),
+                // Вот здесь мы берем только первые N книг
+                books: groups[status].slice(0, limit),
             }));
     }
 
     formatStatus(status) {
-        // Делаем первую букву заглавной
         return status.charAt(0).toUpperCase() + status.slice(1);
     }
 }

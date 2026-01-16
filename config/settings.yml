@@ -17,3 +17,6 @@ plugins:
   yulib_use_small_covers:
     default: true
     client: false
+  yulib_max_books_per_status:
+    default: 30
+    client: true
