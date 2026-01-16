@@ -8,6 +8,11 @@ require 'uri'
 
 after_initialize do
 
+  class ::YulibBook < ActiveRecord::Base
+    self.table_name = "yulib_books"
+    belongs_to :user
+  end
+
   # 1. РЕГИСТРИРУЕМ ПОЛЯ В БАЗЕ (Типы данных)
   User.register_custom_field_type('yulib_external_user_id', :integer)
   User.register_custom_field_type('yulib_app_email', :string)
@@ -15,6 +20,7 @@ after_initialize do
   User.register_custom_field_type('yulib_app_username', :string)
   User.register_custom_field_type('yulib_user_avatar', :string)
   User.register_custom_field_type('yulib_user_uuid', :string)
+  User.register_custom_field_type('yulib_last_sync_at', :integer)
 
   # 2. БЕЛЫЙ СПИСОК ДЛЯ CURRENT USER (Чтобы данные жили после F5)
   # Мы будем отдавать их группой, но на всякий случай разрешим чтение
@@ -45,6 +51,99 @@ after_initialize do
       skip_before_action :verify_authenticity_token
       skip_before_action :check_xhr
 
+      def list_books
+        user = current_user
+        last_sync = user.custom_fields['yulib_last_sync_at'].to_i
+
+        # Синхронизация раз в 24 часа
+        if (Time.now.to_i - last_sync) > 86400
+          sync_books_from_ktor(user, last_sync)
+        end
+
+        books = YulibBook.where(user_id: user.id)
+
+        # Исправляем ошибку сериализации: явно указываем поля
+        render json: {
+          success: true,
+          books: books.as_json(only: [
+            :book_id, :author_id, :author_name, :book_name, :user_cover_url,
+            :page_count, :isbn, :reading_status, :age_restriction, :book_genre_id,
+            :image_name, :start_date, :end_date, :timestamp_of_creating,
+            :timestamp_of_updating, :external_user_id, :is_visible_for_all_users,
+            :description, :image_folder_id, :main_book_id, :publication_year,
+            :timestamp_of_reading_done
+          ])
+        }
+      end
+
+      def sync_books_from_ktor(user, last_sync)
+        token = user.custom_fields['yulib_token']
+        return if token.blank?
+
+        begin
+          base_url = SiteSetting.yulib_backend_url.chomp("/")
+          uri = URI("#{base_url}/api/books/delta?since=#{last_sync}")
+
+          req = Net::HTTP::Get.new(uri)
+          req['Authorization'] = "Bearer #{token}"
+
+          res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') { |http| http.request(req) }
+
+          if res.is_a?(Net::HTTPSuccess)
+            payload = JSON.parse(res.body)
+
+            # 1. Удаление
+            if payload["deleted"].present?
+              YulibBook.where(user_id: user.id, book_id: payload["deleted"]).delete_all
+            end
+
+            # 2. Обновление (все поля)
+            if payload["updated"].present?
+              process_book_updates(user.id, payload["updated"])
+            end
+
+            user.custom_fields['yulib_last_sync_at'] = Time.now.to_i
+            user.save_custom_fields
+          end
+        rescue => e
+          Rails.logger.error "🚀 [YuLib] Sync Error: #{e.message}"
+        end
+      end
+
+      def process_book_updates(user_id, books_array)
+        records = books_array.map do |b|
+          {
+            user_id:                  user_id,
+            book_id:                  b["bookId"],
+            author_id:                b["authorId"],
+            author_name:              b["authorName"],
+            book_name:                b["bookName"],
+            user_cover_url:           b["userCoverUrl"],
+            page_count:               b["pageCount"],
+            isbn:                     b["Isbn"],
+            reading_status:           b["readingStatus"],
+            age_restriction:          b["ageRestriction"],
+            book_genre_id:            b["bookGenreId"],
+            image_name:               b["imageName"],
+            start_date:               b["startDate"],
+            end_date:                 b["endDate"],
+            timestamp_of_creating:    b["timestampOfCreating"],
+            timestamp_of_updating:    b["timestampOfUpdating"],
+            external_user_id:         b["userId"],
+            is_visible_for_all_users: b["isVisibleForAllUsers"] || true,
+            description:              b["description"],
+            image_folder_id:          b["imageFolderId"],
+            main_book_id:             b["mainBookId"],
+            publication_year:         b["publicationYear"],
+            timestamp_of_reading_done: b["timestampOfReadingDone"],
+            created_at:               Time.now,
+            updated_at:               Time.now
+          }
+        end
+
+        # Выполняем массовый вставку/обновление по паре (user_id + book_id)
+        YulibBook.upsert_all(records, unique_by: [:user_id, :book_id])
+      end
 
       def request_code
         app_email = params[:app_email]       # Почта приложения (ввел юзер в поле)
@@ -217,7 +316,7 @@ after_initialize do
   Discourse::Application.routes.prepend do
     post "/yulib/request-code" => "yulib_integration/yulib#request_code"
     post "/yulib/verify-code"  => "yulib_integration/yulib#verify_code"
-
+    get  "/yulib/books"        => "yulib_integration/yulib#list_books"
     # Добавляем маршрут для отвязки
     post "/yulib/unlink"       => "yulib_integration/yulib#unlink"
     # Это говорит Rails: "Для этой ссылки используй контроллер настроек пользователя"
