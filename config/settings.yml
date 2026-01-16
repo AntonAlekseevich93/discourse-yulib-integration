@@ -1,0 +1,4 @@
+plugins:
+  yulib_integration_enabled:
+    default: true
+    client: true
