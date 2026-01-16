@@ -4,10 +4,14 @@ en:
       menu_title: "YuLib Integration"
       page_title: "YuLib App Settings"
       page_description: "Connect your YuLib account to sync your books and profile."
-
-ru:
-  js:
-    yulib_integration:
-      menu_title: "Интеграция YuLib"
-      page_title: "Настройки YuLib"
-      page_description: "Привяжите аккаунт YuLib, чтобы синхронизировать книги и профиль."
+      # Новые ключи для твоего компонента:
+      app_integration_label: "YuLib App Integration"
+      connected: "Connection established!"
+      app_user: "App User"
+      code_sent: "Code sent to your email."
+      placeholder_code: "123456"
+      btn_verify: "Verify"
+      btn_cancel: "Cancel"
+      connect_description: "Link your account to see your books."
+      btn_connect: "Link Application"
+      error_invalid_code: "Invalid code"

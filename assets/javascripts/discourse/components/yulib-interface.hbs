@@ -1,27 +1,30 @@
 <div class="control-group yulib-integration">
-  <label class="control-label">YuLib App Integration</label>
+  <label class="control-label">{{i18n "yulib_integration.app_integration_label"}}</label>
+
   <div class="controls">
-    
+
     {{#if this.isLinked}}
       <div class="alert alert-success" style="display: flex; align-items: center; gap: 15px;">
         <img src="{{this.yulibProfile.avatar}}" style="width: 50px; height: 50px; border-radius: 50%;" />
-        
+
         <div>
-          <strong>Связь установлена!</strong><br>
-          App User: {{this.yulibProfile.username}} <br>
+          <strong>{{i18n "yulib_integration.connected"}}</strong><br>
+          {{i18n "yulib_integration.app_user"}}: {{this.yulibProfile.username}} <br>
           <span style="font-size: 0.8em; color: #666;">ID: {{this.yulibProfile.user_id}} | UUID: {{this.yulibProfile.uuid}}</span>
         </div>
       </div>
     {{else}}
-    
+
       {{#if this.codeSent}}
-        <p>Код отправлен на почту.</p>
-        <Input @type="text" @value={{this.inputCode}} class="input-small" placeholder="123456" />
-        <DButton @label="Подтвердить" @action={{this.verifyCode}} @disabled={{this.isLoading}} class="btn-primary" />
-        <DButton @label="Отмена" @action={{this.reset}} class="btn-flat" />
+        <p>{{i18n "yulib_integration.code_sent"}}</p>
+
+        <Input @type="text" @value={{this.inputCode}} class="input-small" placeholder={{i18n "yulib_integration.placeholder_code"}} />
+
+        <DButton @label={{i18n "yulib_integration.btn_verify"}} @action={{this.verifyCode}} @disabled={{this.isLoading}} class="btn-primary" />
+        <DButton @label={{i18n "yulib_integration.btn_cancel"}} @action={{this.reset}} class="btn-flat" />
       {{else}}
-        <p class="description">Свяжите аккаунт, чтобы видеть свои книги.</p>
-        <DButton @label="Привязать приложение" @action={{this.requestCode}} @disabled={{this.isLoading}} class="btn-primary" />
+        <p class="description">{{i18n "yulib_integration.connect_description"}}</p>
+        <DButton @label={{i18n "yulib_integration.btn_connect"}} @action={{this.requestCode}} @disabled={{this.isLoading}} class="btn-primary" />
       {{/if}}
 
     {{/if}}
