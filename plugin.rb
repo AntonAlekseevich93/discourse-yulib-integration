@@ -11,6 +11,26 @@ after_initialize do
   class ::YulibBook < ActiveRecord::Base
     self.table_name = "yulib_books"
     belongs_to :user
+
+    def full_cover_url
+      return nil if image_name.blank?
+
+      # 1. Берем хост из настроек
+      host = SiteSetting.yulib_books_s3_host
+      return image_name if host.blank? # Если хост не задан, отдаем только имя
+
+      # Гарантируем, что хост заканчивается на /
+      base = host.end_with?("/") ? host : "#{host}/"
+
+      # 2. Проверяем наличие папки
+      if image_folder_id.present?
+        # Если папка есть: host/folder_id/image_name
+        "#{base}#{image_folder_id}/#{image_name}"
+      else
+        # Если папки нет: host/images/image_name
+        "#{base}images/#{image_name}"
+      end
+    end
   end
 
   # 1. РЕГИСТРИРУЕМ ПОЛЯ В БАЗЕ (Типы данных)

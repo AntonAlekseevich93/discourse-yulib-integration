@@ -5,3 +5,6 @@ plugins:
   yulib_backend_url:
     default: "http://host.docker.internal:8080"
     client: false
+  yulib_books_s3_host:
+    default: "https://s3.timeweb.cloud/13109edd-5c7f9725-5507-4e66-8f9a-c54f7bf66003/books/"
+    client: true
