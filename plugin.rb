@@ -7,7 +7,7 @@ require 'net/http'
 require 'uri'
 
 after_initialize do
-  
+
   # 1. РЕГИСТРИРУЕМ ПОЛЯ В БАЗЕ (Типы данных)
   User.register_custom_field_type('yulib_user_id', :integer)
   User.register_custom_field_type('yulib_app_email', :string)
@@ -41,7 +41,7 @@ after_initialize do
   module ::YulibIntegration
     class YulibController < ::ApplicationController
       requires_plugin 'yulib-integration'
-      
+
       skip_before_action :verify_authenticity_token
       skip_before_action :check_xhr
 
@@ -52,7 +52,7 @@ after_initialize do
         code = rand(100000..999999).to_s
         Discourse.redis.setex("yulib_auth_#{email}", 300, code)
         Rails.logger.info "🚀 [YuLib] Code: #{code} for #{email}"
-        
+
         render json: { success: true }
       end
 
@@ -86,13 +86,13 @@ after_initialize do
           user.custom_fields['yulib_app_username'] = mock_backend_data[:app_username]
           user.custom_fields['yulib_user_avatar'] = mock_backend_data[:user_avatar]
           user.custom_fields['yulib_user_uuid'] = mock_backend_data[:user_uuid]
-          
+
           user.save_custom_fields
           Discourse.redis.del("yulib_auth_#{email}")
 
           # Отдаем сохраненный профиль обратно фронту
-          render json: { 
-            success: true, 
+          render json: {
+            success: true,
             yulib_profile: mock_backend_data
           }
         else
@@ -105,5 +105,9 @@ after_initialize do
   Discourse::Application.routes.prepend do
     post "/yulib/request-code" => "yulib_integration/yulib#request_code"
     post "/yulib/verify-code"  => "yulib_integration/yulib#verify_code"
+
+    # --- ДОБАВЛЯЕМ ВОТ ЭТУ СТРОКУ ---
+    # Это говорит Rails: "Для этой ссылки используй контроллер настроек пользователя"
+    get "/u/:username/preferences/yulib" => "users#preferences", constraints: { username: /[^\/]+/ }
   end
 end

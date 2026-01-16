@@ -1,0 +1,13 @@
+en:
+  js:
+    yulib_integration:
+      menu_title: "YuLib Integration"
+      page_title: "YuLib App Settings"
+      page_description: "Connect your YuLib account to sync your books and profile."
+
+ru:
+  js:
+    yulib_integration:
+      menu_title: "Интеграция YuLib"
+      page_title: "Настройки YuLib"
+      page_description: "Привяжите аккаунт YuLib, чтобы синхронизировать книги и профиль."
