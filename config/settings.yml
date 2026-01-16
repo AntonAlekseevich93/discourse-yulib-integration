@@ -2,3 +2,6 @@ plugins:
   yulib_integration_enabled:
     default: true
     client: true
+  yulib_backend_url:
+    default: "http://host.docker.internal:8080"
+    client: false

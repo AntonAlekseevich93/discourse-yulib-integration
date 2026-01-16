@@ -1,4 +1,9 @@
 ru:
+  site_settings:
+    # Имя настройки должно СТРОГО совпадать с именем в settings.yml
+    yulib_backend_url: "URL бэкенда приложения YuLib"
+    yulib_backend_url_description: "Укажите адрес вашего API (например, http://host.docker.internal:8080)"
+
   js:
     yulib_integration:
       menu_title: "Интеграция с Юлиб"
@@ -8,7 +13,7 @@ ru:
       app_integration_label: "Интеграция приложения Юлиб"
       connected: "Связь установлена!"
       app_user: "Пользователь приложения"
-      code_sent: "Код отправлен на почту."
+      code_sent: "В приложение отправлен код. Проверьте уведомления."
       placeholder_code: "123456"
       btn_verify: "Подтвердить"
       btn_cancel: "Отмена"
