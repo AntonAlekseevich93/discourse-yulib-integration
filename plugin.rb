@@ -56,6 +56,29 @@ after_initialize do
         render json: { success: true }
       end
 
+      def unlink
+        email = params[:email]
+        return render json: { error: "Email required" }, status: 400 if email.blank?
+
+        user = User.find_by_email(email)
+
+        if user
+          # Очищаем поля
+          user.custom_fields['yulib_user_id'] = nil
+          user.custom_fields['yulib_app_email'] = nil
+          user.custom_fields['yulib_token'] = nil
+          user.custom_fields['yulib_app_username'] = nil
+          user.custom_fields['yulib_user_avatar'] = nil
+          user.custom_fields['yulib_user_uuid'] = nil
+
+          user.save_custom_fields
+
+          render json: { success: true }
+        else
+          render json: { success: false, error: "User not found" }, status: 404
+        end
+      end
+
       def verify_code
         email = params[:email]
         input_code = params[:code]
@@ -106,7 +129,8 @@ after_initialize do
     post "/yulib/request-code" => "yulib_integration/yulib#request_code"
     post "/yulib/verify-code"  => "yulib_integration/yulib#verify_code"
 
-    # --- ДОБАВЛЯЕМ ВОТ ЭТУ СТРОКУ ---
+    # Добавляем маршрут для отвязки
+    post "/yulib/unlink"       => "yulib_integration/yulib#unlink"
     # Это говорит Rails: "Для этой ссылки используй контроллер настроек пользователя"
     get "/u/:username/preferences/yulib" => "users#preferences", constraints: { username: /[^\/]+/ }
   end

@@ -43,6 +43,37 @@ export default class YulibInterface extends Component {
   }
 
   @action
+  async unlinkProfile() {
+    // 1. Спрашиваем подтверждение (хорошая практика UX)
+    if (!confirm("Вы уверены, что хотите отвязать аккаунт приложения?")) {
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    try {
+      // 2. Отправляем запрос на бэкенд
+      await ajax("/yulib/unlink", {
+        type: "POST",
+        data: { email: this.currentUser.email }
+      });
+
+      // 3. Очищаем данные локально (чтобы интерфейс перерисовался)
+      this.yulibProfile = null;
+
+      // 4. Очищаем данные в currentUser (чтобы при переходе на другие страницы не "мигало")
+      this.currentUser.set("yulib_profile", null);
+
+    } catch (error) {
+      this.errorMessage = "Ошибка при отвязке аккаунта";
+      popupAjaxError(error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  @action
   async verifyCode() {
     this.isLoading = true;
     this.errorMessage = null;
