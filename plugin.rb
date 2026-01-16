@@ -46,14 +46,24 @@ after_initialize do
       skip_before_action :check_xhr
 
       def request_code
-        email = params[:email]
-        return render json: { error: "Email required" }, status: 400 if email.blank?
+        # --- ВОТ ЭТОТ БЛОК ВСТАВИТЬ (ПОЛНОСТЬЮ МЕТОД) ---
+        app_email = params[:app_email]       # Почта из инпута
+        forum_email = params[:forum_email]   # Почта из системы
+        user_id = current_user.id
+
+        return render json: { error: "Email required" }, status: 400 if app_email.blank?
 
         code = rand(100000..999999).to_s
-        Discourse.redis.setex("yulib_auth_#{email}", 300, code)
-        Rails.logger.info "🚀 [YuLib] Code: #{code} for #{email}"
+
+        # Ключ связывает ID юзера форума и почту приложения
+        redis_key = "yulib_auth_#{user_id}_#{app_email}"
+        Discourse.redis.setex(redis_key, 300, code)
+
+        # Обновленный лог: теперь ты увидишь обе почты в консоли
+        Rails.logger.info "🚀 [YuLib] User ID: #{user_id} | Forum Email: #{forum_email} | Linking to App Email: #{app_email} | Code: #{code}"
 
         render json: { success: true }
+        # --- КОНЕЦ БЛОКА ---
       end
 
       def unlink
@@ -80,49 +90,47 @@ after_initialize do
       end
 
       def verify_code
-        email = params[:email]
+        app_email = params[:app_email]
         input_code = params[:code]
-        stored_code = Discourse.redis.get("yulib_auth_#{email}")
+        user_id = current_user.id
+        user = current_user
+
+        # 1. Проверяем связку в Redis
+        redis_key = "yulib_auth_#{user_id}_#{app_email}"
+        stored_code = Discourse.redis.get(redis_key)
 
         if stored_code.nil? || input_code != stored_code
           return render json: { success: false, error: "Invalid or expired code" }, status: 403
         end
 
-        user = User.find_by_email(email)
+        # 2. Генерируем МОК-ДАННЫЕ (ключи теперь сразу такие, как ждет фронт)
+        mock_backend_data = {
+          user_id: 888,
+          email: app_email,
+          token: "eyJhGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake-token",
+          username: "AppMaster_#{rand(100)}",
+          avatar: "https://avatars.githubusercontent.com/u/1?v=4",
+          uuid: "550e8400-e29b-41d4-a716-44665544#{user_id}"
+        }
 
         if user
-          # --- ТУТ ПРИХОДЯТ ДАННЫЕ С ТВОЕГО БЭКА (МОК) ---
-          # В реальности ты распарсишь ответ от API
-          mock_backend_data = {
-            user_id: 777,
-            app_email: email,
-            token: "eyJhGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake-token",
-            app_username: "AppMaster_#{rand(100)}",
-            user_avatar: "https://avatars.githubusercontent.com/u/1?v=4", # Тестовая картинка
-            user_uuid: "550e8400-e29b-41d4-a716-446655440000"
-          }
-
-          # Сохраняем каждое поле отдельно в Custom Fields
+          # 3. Сохраняем каждое поле в базу Discourse (Custom Fields)
           user.custom_fields['yulib_user_id'] = mock_backend_data[:user_id]
-          user.custom_fields['yulib_app_email'] = mock_backend_data[:app_email]
+          user.custom_fields['yulib_app_email'] = mock_backend_data[:email]
           user.custom_fields['yulib_token'] = mock_backend_data[:token]
-          user.custom_fields['yulib_app_username'] = mock_backend_data[:app_username]
-          user.custom_fields['yulib_user_avatar'] = mock_backend_data[:user_avatar]
-          user.custom_fields['yulib_user_uuid'] = mock_backend_data[:user_uuid]
+          user.custom_fields['yulib_app_username'] = mock_backend_data[:username]
+          user.custom_fields['yulib_user_avatar'] = mock_backend_data[:avatar]
+          user.custom_fields['yulib_user_uuid'] = mock_backend_data[:uuid]
 
           user.save_custom_fields
-          Discourse.redis.del("yulib_auth_#{email}")
 
-          # Отдаем сохраненный профиль обратно фронту
+          # 4. Удаляем использованный код
+          Discourse.redis.del(redis_key)
+
+          # 5. Отдаем профиль фронту
           render json: {
             success: true,
-            yulib_profile: {
-              user_id: mock_backend_data[:user_id],
-              email: mock_backend_data[:app_email],
-              username: mock_backend_data[:app_username], # Фронт ждет username, а не app_username
-              avatar: mock_backend_data[:user_avatar],    # Фронт ждет avatar, а не user_avatar
-              uuid: mock_backend_data[:user_uuid]         # Фронт ждет uuid, а не user_uuid
-            }
+            yulib_profile: mock_backend_data
           }
         else
           render json: { success: false, error: "User not found" }, status: 404

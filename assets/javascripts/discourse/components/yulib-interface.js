@@ -12,6 +12,7 @@ export default class YulibInterface extends Component {
   @tracked inputCode = "";
   @tracked isLoading = false;
   @tracked errorMessage = null;
+  @tracked appEmail = "";
 
   // Здесь теперь храним весь объект профиля
   @tracked yulibProfile = null;
@@ -22,6 +23,7 @@ export default class YulibInterface extends Component {
     if (this.currentUser && this.currentUser.yulib_profile) {
       this.yulibProfile = this.currentUser.yulib_profile;
     }
+    this.appEmail = this.currentUser.email;
   }
 
   get isLinked() {
@@ -33,7 +35,13 @@ export default class YulibInterface extends Component {
     this.isLoading = true;
     this.errorMessage = null;
     try {
-      await ajax("/yulib/request-code", { type: "POST", data: { email: this.currentUser.email } });
+      await ajax("/yulib/request-code", {
+        type: "POST",
+        data: {
+          app_email: this.appEmail,       // Почта, которую ввел юзер (для кода)
+          forum_email: this.currentUser.email // Почта на форуме (на всякий случай)
+        }
+      });
       this.codeSent = true;
     } catch (error) {
       popupAjaxError(error);
@@ -81,7 +89,11 @@ export default class YulibInterface extends Component {
     try {
       const result = await ajax("/yulib/verify-code", {
         type: "POST",
-        data: { email: this.currentUser.email, code: this.inputCode }
+        data: {
+          app_email: this.appEmail,        // Почта для проверки кода
+          forum_email: this.currentUser.email, // Почта форума
+          code: this.inputCode             // Сам код
+        }
       });
 
       // Обновляем локально
@@ -91,7 +103,7 @@ export default class YulibInterface extends Component {
       this.currentUser.set("yulib_profile", result.yulib_profile);
 
       this.codeSent = false;
-    } catch (error) {
+    } catch {
       this.errorMessage = "Неверный код";
     } finally {
       this.isLoading = false;

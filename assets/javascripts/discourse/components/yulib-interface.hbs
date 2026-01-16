@@ -35,6 +35,15 @@
                 <DButton @label={{i18n "yulib_integration.btn_cancel"}} @action={{this.reset}} class="btn-flat" />
             {{else}}
                 <p class="description">{{i18n "yulib_integration.connect_description"}}</p>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-weight: bold; margin-bottom: 5px;">Email в приложении:</label>
+                    <Input
+                            @type="text"
+                            @value={{this.appEmail}}
+                            class="input-xxlarge"
+                            placeholder="example@app.com"
+                    />
+                </div>
                 <DButton @label={{i18n "yulib_integration.btn_connect"}} @action={{this.requestCode}} @disabled={{this.isLoading}} class="btn-primary" />
             {{/if}}
 
