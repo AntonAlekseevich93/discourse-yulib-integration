@@ -9,7 +9,7 @@ require 'uri'
 after_initialize do
 
   # 1. РЕГИСТРИРУЕМ ПОЛЯ В БАЗЕ (Типы данных)
-  User.register_custom_field_type('yulib_user_id', :integer)
+  User.register_custom_field_type('yulib_external_user_id', :integer)
   User.register_custom_field_type('yulib_app_email', :string)
   User.register_custom_field_type('yulib_token', :string)
   User.register_custom_field_type('yulib_app_username', :string)
@@ -26,7 +26,7 @@ after_initialize do
   add_to_serializer(:current_user, :yulib_profile) do
     if object.custom_fields['yulib_token'].present?
       {
-        user_id: object.custom_fields['yulib_user_id'],
+        user_id: object.custom_fields['yulib_external_user_id'],
         email: object.custom_fields['yulib_app_email'],
         token: object.custom_fields['yulib_token'],
         username: object.custom_fields['yulib_app_username'],
@@ -115,7 +115,7 @@ after_initialize do
 
           if response.is_a?(Net::HTTPSuccess)
             # 2. Если бэк подтвердил (200 OK), чистим поля в Discourse
-            user.custom_fields['yulib_user_id']      = nil
+            user.custom_fields['yulib_external_user_id']      = nil
             user.custom_fields['yulib_app_email']    = nil
             user.custom_fields['yulib_token']        = nil
             user.custom_fields['yulib_app_username'] = nil
@@ -196,7 +196,7 @@ after_initialize do
 
         # 3. СОХРАНЕНИЕ В DISCOURSE
         if user && external_data
-          user.custom_fields['yulib_user_id']      = external_data[:user_id]
+          user.custom_fields['yulib_external_user_id']      = external_data[:user_id]
           user.custom_fields['yulib_app_email']    = external_data[:email]
           user.custom_fields['yulib_token']        = external_data[:token]
           user.custom_fields['yulib_app_username'] = external_data[:username]
