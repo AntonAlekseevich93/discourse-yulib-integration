@@ -192,3 +192,58 @@
 .btn{
     border-radius: 10px;
 }
+
+/* Виджет на главной привязки приложения */
+/* Виджет на главной */
+.yulib-home-widget {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Расстояние между всеми блоками */
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin: 20px auto 0px auto;
+  max-width: 600px;
+  background-color: var(--success-low);
+  border: 1px solid var(--success-medium);
+
+  .yulib-widget-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1; /* Растягивается, прижимая кнопку к правой части */
+  }
+
+  .yulib-widget-center {
+    flex: 0 0 auto; /* Занимает ровно столько места, сколько нужно кнопке */
+  }
+
+  .yulib-widget-right {
+    flex: 0 0 auto; /* Занимает ровно столько места, сколько нужно иконке */
+    display: flex;
+    align-items: center;
+    min-width: 20px; /* Чтобы иконка не прыгала при смене */
+  }
+
+  .yulib-enable-btn {
+    border-radius: 20px;
+    padding: 6px 15px;
+    color: black;
+
+    .d-icon {
+      color: #000000; /* Например, золотой */
+    }
+
+    &:hover {
+      background-color: #5ec35e !important; /* Цвет фона при наведении */
+      color: #FFFFFF !important; /* Цвет текста при наведении */
+
+      .d-icon {
+        color: #FFFFFF !important; /* Цвет иконки при наведении */
+        fill: #FFFFFF !important;
+      }
+    }
+  }
+
+  /* ... остальные стили (avatar, info) без изменений ... */
+}
+/* END Виджет на главной привязки приложения */

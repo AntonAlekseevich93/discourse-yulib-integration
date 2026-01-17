@@ -114,6 +114,9 @@ after_initialize do
   end
   # END Чтобы фронтенд знал, включены ли пуши
 
+  # Добавляем коннектор для велком-баннера
+  allow_public_user_custom_field :yulib_profile
+
   # --- 4. ПОДКЛЮЧАЕМ ЛОГИКУ ОТПРАВКИ (Pusher) ---
   # Мы создадим этот файл на следующем шаге
   require_relative 'lib/yulib_pusher'
