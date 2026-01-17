@@ -16,6 +16,8 @@ gem 'fcm', '1.0.8'
 register_asset 'stylesheets/common/yulib.scss'
 register_svg_icon "check"
 register_svg_icon "unlink"
+register_svg_icon "angle-down"
+register_svg_icon "angle-up"
 after_initialize do
 
   class ::YulibBook < ActiveRecord::Base
@@ -72,6 +74,17 @@ after_initialize do
   # НОВОЕ ПОЛЕ: Статус подписки (включено/выключено)
   User.register_custom_field_type('yulib_push_enabled', :boolean)
   allow_staff_user_custom_field 'yulib_push_enabled'
+
+  # ==СВЕРНУТОСТЬ БАННЕРА НА ГЛАВНОЙ==
+  User.register_custom_field_type('yulib_banner_collapsed', :boolean)
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_banner_collapsed'
+  add_to_serializer(:current_user, :yulib_banner_collapsed) do
+    # Проверяем и строку 'true', и булево true
+    val = object.custom_fields['yulib_banner_collapsed']
+    val == 'true' || val == true
+  end
+  # == END СВЕРНУТОСТЬ БАННЕРА НА ГЛАВНОЙ==
+
 
   # 2. БЕЛЫЙ СПИСОК ДЛЯ CURRENT USER (Чтобы данные жили после F5)
   # Мы будем отдавать их группой, но на всякий случай разрешим чтение
@@ -185,6 +198,20 @@ after_initialize do
           success: true,
           books: books_with_covers
         }
+      end
+
+      def toggle_banner
+        return render_json_error("Not logged in") unless current_user
+        # 1. Приводим к булевому значению (строка 'true' -> true, остальное -> false)
+        state = params[:state].to_s == 'true'
+        # 2. Пишем в custom_fields
+        current_user.custom_fields['yulib_banner_collapsed'] = state
+        # 3. Сохраняем. save_custom_fields(true) форсирует запись.
+        if current_user.save_custom_fields(true)
+          render json: success_json
+        else
+          render_json_error("Could not save")
+        end
       end
 
       def sync_books_from_ktor(user, last_sync)
@@ -564,5 +591,6 @@ after_initialize do
     post "/yulib/enable-push" => "yulib_integration/yulib#enable_push"
     # Это говорит Rails: "Для этой ссылки используй контроллер настроек пользователя"
     get "/u/:username/preferences/yulib" => "users#preferences", constraints: { username: /[^\/]+/ }
+    put  "/yulib/toggle-banner" => "yulib_integration/yulib#toggle_banner"
   end
 end

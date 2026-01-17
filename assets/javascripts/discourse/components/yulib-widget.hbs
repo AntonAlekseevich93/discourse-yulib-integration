@@ -1,6 +1,7 @@
 {{!-- Это виджет на главной привязки приложения --}}
 {{#if this.yulibProfile}}
-    <div class="yulib-home-widget alert alert-success">
+{{!-- ВНИМАНИЕ: Здесь меняем класс динамически. Если свернуто - 'collapsed', если нет - твои старые стили --}}
+    <div class="yulib-home-widget {{if this.isCollapsedLocal 'collapsed' 'alert alert-success'}}">
         <div class="yulib-widget-left">
             <img
                     src="{{this.yulibProfile.avatar}}"
@@ -9,35 +10,55 @@
                 {{on "error" this.handleAvatarError}}
             />
             <div class="yulib-widget-info">
-                <div class="yulib-widget-title">{{i18n "yulib_integration.connected"}}</div>
-                <div class="yulib-widget-user">{{this.yulibProfile.username}}</div>
+                {{!-- Если СВЕРНУТО (используем Local): Показываем только имя --}}
+                {{#if this.isCollapsedLocal}}
+                    <div class="yulib-widget-user collapsed-name">{{this.yulibProfile.username}}</div>
+                {{else}}
+                {{!-- Если РАЗВЕРНУТО: Твой старый код --}}
+                    <div class="yulib-widget-title">{{i18n "yulib_integration.connected"}}</div>
+                    <div class="yulib-widget-user">{{this.yulibProfile.username}}</div>
+                {{/if}}
             </div>
         </div>
 
-        {{!-- КНОПКА ПО ЦЕНТРУ --}}
-        <div class="yulib-widget-center">
-            {{#unless this.currentUser.yulib_push_enabled}}
-                <DButton
-                        @label="yulib_integration.enablePush"
-                        @action={{this.enablePush}}
-                        @icon="bell"
-                        class="btn-small btn-primary yulib-enable-btn"
-                />
-            {{/unless}}
-        </div>
+        {{!-- КНОПКА ПО ЦЕНТРУ (Скрываем, если свернуто) --}}
+        {{#unless this.isCollapsedLocal}}
+            <div class="yulib-widget-center">
+                {{#unless this.currentUser.yulib_push_enabled}}
+                    <DButton
+                            @label="yulib_integration.enablePush"
+                            @action={{this.enablePush}}
+                            @icon="bell"
+                            class="btn-small btn-primary yulib-enable-btn"
+                    />
+                {{/unless}}
+            </div>
+        {{/unless}}
 
         <div class="yulib-widget-right">
             {{#if this.currentUser.yulib_push_enabled}}
-                {{d-icon "bell" style="color: green;"}}
+            {{!-- Зеленый колокольчик (скрываем в свернутом виде) --}}
+                {{#unless this.isCollapsedLocal}}
+                    {{d-icon "bell" style="color: green;"}}
+                {{/unless}}
+
+            {{!-- Кнопка Свернуть/Развернуть --}}
+            {{!-- Логика: Если свернуто (Local=true) -> иконка ВНИЗ (развернуть). Иначе -> ВВЕРХ --}}
+                <DButton
+                        @action={{this.toggleBanner}}
+                        @icon={{if this.isCollapsedLocal "angle-down" "angle-up"}}
+                        class="btn-flat yulib-toggle-btn"
+                        @title={{if this.isCollapsedLocal "Развернуть" "Свернуть"}}
+                />
             {{else}}
-            <div class="has-tooltip" title="Не удалось подключить уведомления">
-                {{d-icon "bell-slash" style="color: var(--primary-medium);"}}
-            </div>
+                <div class="has-tooltip" title="Не удалось подключить уведомления">
+                    {{d-icon "bell-slash" style="color: var(--primary-medium);"}}
+                </div>
             {{/if}}
         </div>
     </div>
 {{else}}
-{{!-- НОВЫЙ БЛОК: Призыв к привязке (серый) --}}
+{{!-- ТВОЙ СТАРЫЙ БЛОК ДЛЯ СЕРОГО ВИДЖЕТА --}}
     <a href="{{this.settingsUrl}}" class="yulib-home-widget yulib-promo-widget">
         <div class="yulib-widget-left">
             <div class="promo-icon-wrapper">

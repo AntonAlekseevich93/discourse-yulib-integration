@@ -247,7 +247,23 @@
     color: var(--primary); /* Гарантируем, что цвет будет основным */
     font-size: 1.0em; /* Можно чуть увеличить для акцента */
   }
+  .yulib-toggle-btn {
+    padding: 6px;
+    margin-left: 16px;         /* Отступ от колокольчика */
 
+    .d-icon {
+      color: inherit;         /* Чтобы иконка наследовала цвет текста кнопки */
+    }
+
+    &:hover {
+      background: #9bd79b !important; /* Легкое затемнение при наведении */
+      color: #000 !important;
+    }
+
+    &:active {
+      transform: scale(0.9);  /* Эффект нажатия */
+    }
+  }
 
   .yulib-enable-btn {
     border-radius: 20px;
@@ -348,7 +364,6 @@
 @media screen and (max-width: 545px) {
   .yulib-home-widget {
 
-
     .yulib-enable-btn {
       .d-button-label {
         font-size: 0.8em;
@@ -356,7 +371,12 @@
     }
 
     .yulib-widget-right {
-      display: none !important;
+      display: flex !important; /* Саму область показываем */
+
+      /* Скрываем всё внутри, КРОМЕ нашей кнопки */
+      > *:not(.yulib-toggle-btn) {
+        display: none !important;
+      }
     }
 
 
@@ -388,7 +408,10 @@
   .yulib-home-widget {
     /* Скрываем правую часть (иконку статуса) */
     .yulib-widget-right {
-      display: none !important;
+      display: flex !important;
+      > *:not(.yulib-toggle-btn) {
+        display: none !important;
+      }
     }
 
     .yulib-enable-btn {
@@ -437,3 +460,74 @@
 /* END БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах уже 490px */
 /* ==================================================== */
 
+/* ==================================================== */
+/* СВЕРНУТЫЙ БАННЕР (COLLAPSED) */
+/* ==================================================== */
+.yulib-home-widget.collapsed {
+  //background-color: transparent;
+  background-color: var(--primary-very-low);
+  border: 1px solid transparent;
+  padding: 8px 15px;
+  margin: 0 auto 26px auto;
+  max-width: fit-content;
+  display: flex;
+  justify-content: center;   /* Центрируем всё содержимое внутри */
+  align-items: center;
+
+  /* Убираем жадность левого блока, чтобы он не забирал всё пространство */
+  .yulib-widget-left {
+    flex: 0 0 auto !important;
+    margin-right: 0;
+  }
+
+  /* Аватарка */
+  .yulib-user-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    margin-right: 8px;
+  }
+
+  /* Имя пользователя */
+  .yulib-widget-user.collapsed-name {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--primary-high);
+    white-space: nowrap; /* Чтобы имя не переносилось */
+  }
+
+  /* Кнопка переключения - ПРИЖАТА К ИМЕНИ */
+  .yulib-toggle-btn {
+    padding: 4px;
+    margin-left: 4px !important; /* Минимальный отступ от имени, как ты и хотел */
+    background: transparent;
+    display: flex;
+    align-items: center;
+
+    .d-icon {
+      color: var(--primary-medium);
+      font-size: 0.8em;
+    }
+
+    &:hover {
+      background: #d8d7d7 !important; /* Твой розовый акцент */
+
+      .d-icon {
+        color: #fff !important; /* Иконка станет белой на розовом фоне */
+      }
+    }
+
+    &:active {
+      transform: scale(0.9);
+    }
+  }
+
+  /* Эффект при наведении на весь свернутый ряд */
+  &:hover {
+    //background-color: var(--primary-very-low);
+    background-color: transparent;
+    border-radius: 20px; /* Сделаем его овальным, раз он по центру */
+  }
+}
+/* ==================================================== */
+/* END СВЕРНУТЫЙ БАННЕР (COLLAPSED) */
+/* ==================================================== */
