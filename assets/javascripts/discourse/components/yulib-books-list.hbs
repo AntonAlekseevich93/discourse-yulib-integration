@@ -20,6 +20,25 @@
                             </div>
                         </div>
                     {{/each}}
+
+                    {{!-- ИЗМЕНЕНИЯ ЗДЕСЬ --}}
+                    {{#if group.showMoreCard}}
+                        <a
+                                href="#"
+                                class="yulib-book-card more-card-link"
+                            {{on "click" (fn this.openApp group.appUrl)}}
+                        >
+                            <div class="book-cover more-cover">
+                                <span class="more-text">Больше в приложении</span>
+                                {{d-icon "arrow-right" class="more-icon"}}
+                            </div>
+                            <div class="book-info">
+                                <div class="book-title" style="color: var(--primary-medium); visibility: hidden;">.</div>
+                            </div>
+                        </a>
+                    {{/if}}
+                    {{!-- КОНЕЦ ИЗМЕНЕНИЙ --}}
+
                 </div>
             </div>
         {{/each}}

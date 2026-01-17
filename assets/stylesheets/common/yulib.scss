@@ -148,7 +148,7 @@
 }
 
 /* ==================================================== */
-/* КАРТОЧКА */
+/* КАРТОЧКА КНИГИ В НАСТРОЙКАХ */
 /* ==================================================== */
 .yulib-book-card {
   flex: 0 0 130px;
@@ -205,9 +205,53 @@
       text-overflow: ellipsis;
     }
   }
+
+  /* Стили для ссылки "Больше" */
+  &.more-card-link {
+    text-decoration: none; /* Убираем подчеркивание */
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: translateY(-3px); /* Легкий подскок при наведении */
+
+      .more-cover {
+        background-color: var(--primary-low); /* Чуть темнее при наведении */
+        border-color: var(--primary-medium);
+      }
+
+      .more-text, .more-icon {
+        color: var(--primary);
+      }
+    }
+  }
+
+  /* Сама "обложка" заглушки */
+  .book-cover.more-cover {
+    background-color: var(--primary-very-low); /* Светло-серый (или фон форума) */
+    border: 1px dashed var(--primary-low-mid); /* Пунктирная рамка */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--primary-medium);
+
+    .more-text {
+      font-size: 0.9em;
+      font-weight: bold;
+      margin-bottom: 5px;
+      line-height: 1.2;
+    }
+
+    .more-icon {
+      font-size: 1.2em;
+      margin-top: 5px;
+    }
+  }
 }
 /* ==================================================== */
-/* END КАРТОЧКА */
+/* END КАРТОЧКА КНИГИ В НАСТРОЙКАХ */
 /* ==================================================== */
 
 
