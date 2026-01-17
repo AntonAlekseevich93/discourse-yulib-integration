@@ -1,6 +1,28 @@
-/* ================================================= */
-/* 1. ГЛАВНЫЙ ВЗЛОМ: Снимаем оковы с ФОРМЫ */
-/* ================================================= */
+/* Принудительно показываем иконку Верификации */
+.yulib-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin-bottom: 0.12em;
+  vertical-align: middle !important;
+}
+/* Иконка верификации */
+.yulib-badge svg.yulib-icon-svg {
+  fill: #0088cc !important;  /* Насыщенный синий */
+  color: #0088cc !important;
+  width: 16px !important;    /* Фиксированный размер в пикселях */
+  height: 16px !important;
+  display: inline-block !important;
+  opacity: 1 !important;     /* На случай, если кто-то поставил прозрачность */
+  visibility: visible !important;
+}
+/* Иконка верификации */
+/* На случай, если иконка обрезается родителем */
+.names .username {
+  overflow: visible !important;
+}
 
 /* Находим контейнер контента */
 .user-main .user-content {
@@ -150,3 +172,4 @@
     }
   }
 }
+

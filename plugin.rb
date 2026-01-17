@@ -6,6 +6,7 @@
 require 'net/http'
 require 'uri'
 register_asset 'stylesheets/common/yulib.scss'
+register_svg_icon "check-circle"
 after_initialize do
 
   class ::YulibBook < ActiveRecord::Base
@@ -75,6 +76,16 @@ after_initialize do
     else
       nil
     end
+  end
+
+  add_to_serializer(:user, :yulib_verified) do
+    # Пользователь считается верифицированным, если у него есть токен
+    object.custom_fields['yulib_token'].present?
+  end
+
+  # Разрешаем передачу этого поля на клиент
+  add_to_serializer(:post, :yulib_verified) do
+    object.user&.custom_fields&.[]('yulib_token').present?
   end
 
   module ::YulibIntegration
