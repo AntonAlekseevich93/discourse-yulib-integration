@@ -8,14 +8,15 @@
   margin-bottom: 0.12em;
   vertical-align: middle !important;
 }
+
 /* Иконка верификации */
 .yulib-badge svg.yulib-icon-svg {
-  fill: #0088cc !important;  /* Насыщенный синий */
+  fill: #0088cc !important; /* Насыщенный синий */
   color: #0088cc !important;
-  width: 16px !important;    /* Фиксированный размер в пикселях */
+  width: 16px !important; /* Фиксированный размер в пикселях */
   height: 16px !important;
   display: inline-block !important;
-  opacity: 1 !important;     /* На случай, если кто-то поставил прозрачность */
+  opacity: 1 !important; /* На случай, если кто-то поставил прозрачность */
   visibility: visible !important;
 }
 
@@ -23,6 +24,7 @@
 .btn-small, .json-editor-btn-collapse {
   background: #66ff66;
 }
+
 /* Иконка верификации */
 /* На случай, если иконка обрезается родителем */
 .names .username {
@@ -41,9 +43,9 @@
 */
 .user-main .user-content form {
   max-width: none !important; /* Убираем лимит */
-  width: 100% !important;     /* Растягиваем */
-  display: block !important;  /* Убираем лишние флексы */
-  padding-right: 20px;        /* Чуть воздуха справа */
+  width: 100% !important; /* Растягиваем */
+  display: block !important; /* Убираем лишние флексы */
+  padding-right: 20px; /* Чуть воздуха справа */
   box-sizing: border-box;
 }
 
@@ -110,17 +112,21 @@
   &::-webkit-scrollbar {
     height: 8px;
   }
+
   &::-webkit-scrollbar-track {
     background: var(--primary-low-mid);
     border-radius: 4px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: var(--primary-medium);
     border-radius: 4px;
   }
 }
 
+/* ==================================================== */
 /* КАРТОЧКА */
+/* ==================================================== */
 .yulib-book-card {
   flex: 0 0 130px;
   width: 130px;
@@ -133,7 +139,7 @@
     border-radius: 6px;
     overflow: hidden;
     margin-bottom: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 
     img {
       width: 100%;
@@ -177,6 +183,14 @@
     }
   }
 }
+/* ==================================================== */
+/* END КАРТОЧКА */
+/* ==================================================== */
+
+
+/* ==================================================== */
+/* АВАТАР НА БАНЕРЕ  ПРИЛОЖЕНИЯ КОГДА НЕ ГРУЗИТСЯ URL ПОЛЬЗОВАТЕЛЯ */
+/* ==================================================== */
 /* делаем аватарку-заглушку серой и полупрозрачной */
 .yulib-user-avatar[src*="avatar.png"] {
   filter: grayscale(1) brightness(0.8);
@@ -189,19 +203,23 @@
   border-radius: 14px;
 }
 
-.btn{
-    border-radius: 10px;
+.btn {
+  border-radius: 10px;
 }
+/* ==================================================== */
+/* END АВАТАР НА БАНЕРЕ  ПРИЛОЖЕНИЯ КОГДА НЕ ГРУЗИТСЯ URL ПОЛЬЗОВАТЕЛЯ */
+/* ==================================================== */
 
+/* ==================================================== */
 /* Виджет на главной привязки приложения */
-/* Виджет на главной */
+/* ==================================================== */
 .yulib-home-widget {
   display: flex;
   align-items: center;
   gap: 15px; /* Расстояние между всеми блоками */
   padding: 12px 20px;
   border-radius: 12px;
-  margin: 20px auto 0px auto;
+  margin: 0px auto 20px auto;
   max-width: 600px;
   background-color: var(--success-low);
   border: 1px solid var(--success-medium);
@@ -224,6 +242,13 @@
     min-width: 20px; /* Чтобы иконка не прыгала при смене */
   }
 
+  .yulib-widget-title {
+    font-weight: bold;
+    color: var(--primary); /* Гарантируем, что цвет будет основным */
+    font-size: 1.0em; /* Можно чуть увеличить для акцента */
+  }
+
+
   .yulib-enable-btn {
     border-radius: 20px;
     padding: 6px 15px;
@@ -243,7 +268,172 @@
       }
     }
   }
-
-  /* ... остальные стили (avatar, info) без изменений ... */
 }
+/* ==================================================== */
 /* END Виджет на главной привязки приложения */
+/* ==================================================== */
+
+/* ==================================================== */
+/* Виджет на главной НЕ привязано (промо-виджет) */
+/* ==================================================== */
+.yulib-home-widget.yulib-promo-widget {
+  background-color: #f4f5f5; /* Светло-серый фон Discourse */
+  border: 1px dashed var(--primary-medium); /* Пунктирная граница подчеркивает статус */
+  text-decoration: none; /* Убираем подчеркивание у ссылки */
+  color: var(--primary);
+  cursor: pointer;
+
+
+  /* Центрируем иконку-заглушку вместо аватара */
+  .promo-icon-wrapper {
+    background: #000;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    flex-shrink: 0;
+  }
+
+  /* Текст внутри серого виджета */
+  .yulib-widget-title {
+    color: var(--primary);
+  }
+
+  .yulib-widget-user {
+    color: var(--primary-high);
+  }
+
+  .yulib-widget-title {
+    font-weight: bold;
+    color: var(--primary); /* Гарантируем, что цвет будет основным */
+    font-size: 1.1em; /* Можно чуть увеличить для акцента */
+  }
+
+
+  /* Эффект при наведении на серый блок */
+  &:hover {
+    background-color: #ffffff;
+    border-style: solid; /* Меняем пунктир на сплошную линию */
+    border-color: lightgray;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    .promo-icon-wrapper {
+      background: var(--primary-medium);
+      color: var(--secondary);
+    }
+  }
+}
+
+/* Иконки статуса (цвета) */
+.yulib-home-widget {
+  .icon-success {
+    color: var(--success);
+  }
+
+  .icon-disabled {
+    color: #a9a9a9;
+  }
+}
+/* ==================================================== */
+/* END Виджет на главной НЕ привязано (промо-виджет) */
+/* ==================================================== */
+
+/* ==================================================== */
+/* БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах меньше 545px */
+/* ==================================================== */
+@media screen and (max-width: 545px) {
+  .yulib-home-widget {
+
+
+    .yulib-enable-btn {
+      .d-button-label {
+        font-size: 0.8em;
+      }
+    }
+
+    .yulib-widget-right {
+      display: none !important;
+    }
+
+
+    /* Добавляем отступ справа для левой части, чтобы текст не лип к краю */
+    .yulib-widget-left {
+      padding-right: 10px;
+    }
+  }
+  .yulib-widget-info {
+    .yulib-widget-title {
+      font-weight: bold;
+      color: var(--primary); /* Гарантируем, что цвет будет основным */
+      font-size: 0.8em; /* Можно чуть увеличить для акцента */
+    }
+    .yulib-widget-user {
+      color: var(--primary); /* Гарантируем, что цвет будет основным */
+      font-size: 0.7em; /* Можно чуть увеличить для акцента */
+    }
+  }
+}
+/* ==================================================== */
+/* END БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах меньше 545px */
+/* ==================================================== */
+
+/* ==================================================== */
+/* БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах меньше 490px */
+/* ==================================================== */
+@media screen and (max-width: 490px) {
+  .yulib-home-widget {
+    /* Скрываем правую часть (иконку статуса) */
+    .yulib-widget-right {
+      display: none !important;
+    }
+
+    .yulib-enable-btn {
+      .d-button-label {
+        display: none; /* Скрываем текст "Подключить" */
+      }
+
+      //padding: 6px 10px; /* Делаем кнопку квадратной */
+    }
+
+    /* Добавляем отступ справа для левой части, чтобы текст не лип к краю */
+    .yulib-widget-left {
+      padding-right: 10px;
+    }
+  }
+  .yulib-home-widget.yulib-promo-widget {
+    .yulib-widget-title {
+      font-weight: bold;
+      color: var(--primary); /* Гарантируем, что цвет будет основным */
+      font-size: 0.8em; /* Можно чуть увеличить для акцента */
+    }
+
+    /* Стили для подзаголовка */
+    .yulib-widget-user {
+      font-size: 0.75em;           /* Чуть меньше заголовка */
+      color: var(--primary-high);  /* Приглушенный серый цвет Discourse */
+      line-height: 1.2;            /* Плотный межстрочный интервал */
+      display: block;              /* Чтобы текст точно был на новой строке */
+    }
+
+    /* Центрируем иконку-заглушку вместо аватара */
+    .promo-icon-wrapper {
+      background: #000;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+  }
+}
+/* ==================================================== */
+/* END БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах уже 490px */
+/* ==================================================== */
+

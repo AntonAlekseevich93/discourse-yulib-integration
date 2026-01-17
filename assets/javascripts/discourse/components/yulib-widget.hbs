@@ -1,35 +1,57 @@
 {{!-- Это виджет на главной привязки приложения --}}
-<div class="yulib-home-widget alert alert-success">
-    <div class="yulib-widget-left">
-        <img
-                src="{{this.yulibProfile.avatar}}"
-                style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover;"
-                class="yulib-user-avatar {{if this.avatarFailed 'is-placeholder'}}"
-            {{on "error" this.handleAvatarError}}
-        />
-        <div class="yulib-widget-info">
-            <div class="yulib-widget-title">{{i18n "yulib_integration.connected"}}</div>
-            <div class="yulib-widget-user">{{this.yulibProfile.username}}</div>
+{{#if this.yulibProfile}}
+    <div class="yulib-home-widget alert alert-success">
+        <div class="yulib-widget-left">
+            <img
+                    src="{{this.yulibProfile.avatar}}"
+                    style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover;"
+                    class="yulib-user-avatar {{if this.avatarFailed 'is-placeholder'}}"
+                {{on "error" this.handleAvatarError}}
+            />
+            <div class="yulib-widget-info">
+                <div class="yulib-widget-title">{{i18n "yulib_integration.connected"}}</div>
+                <div class="yulib-widget-user">{{this.yulibProfile.username}}</div>
+            </div>
+        </div>
+
+        {{!-- КНОПКА ПО ЦЕНТРУ --}}
+        <div class="yulib-widget-center">
+            {{#unless this.currentUser.yulib_push_enabled}}
+                <DButton
+                        @label="yulib_integration.enablePush"
+                        @action={{this.enablePush}}
+                        @icon="bell"
+                        class="btn-small btn-primary yulib-enable-btn"
+                />
+            {{/unless}}
+        </div>
+
+        <div class="yulib-widget-right">
+            {{#if this.currentUser.yulib_push_enabled}}
+                {{d-icon "bell" style="color: green;"}}
+            {{else}}
+            <div class="has-tooltip" title="Не удалось подключить уведомления">
+                {{d-icon "bell-slash" style="color: var(--primary-medium);"}}
+            </div>
+            {{/if}}
         </div>
     </div>
-
-    {{!-- КНОПКА ПО ЦЕНТРУ --}}
-    <div class="yulib-widget-center">
-        {{#unless this.currentUser.yulib_push_enabled}}
-            <DButton
-                    @label="yulib_integration.enablePush"
-                    @action={{this.enablePush}}
-                    @icon="bell"
-                    class="btn-small btn-primary yulib-enable-btn"
-            />
-        {{/unless}}
-    </div>
-
-    <div class="yulib-widget-right">
-        {{#if this.currentUser.yulib_push_enabled}}
-            {{d-icon "bell" style="color: green;"}}
-        {{else}}
-            {{d-icon "bell-slash" style="color: var(--primary-medium);"}}
-        {{/if}}
-    </div>
-</div>
+{{else}}
+{{!-- НОВЫЙ БЛОК: Призыв к привязке (серый) --}}
+    <a href="{{this.settingsUrl}}" class="yulib-home-widget yulib-promo-widget">
+        <div class="yulib-widget-left">
+            <div class="promo-icon-wrapper">
+                {{d-icon "link"}}
+            </div>
+            <div class="yulib-widget-info">
+                <div class="yulib-widget-title">Привяжите приложение к форуму</div>
+                <div class="yulib-widget-user">Получайте уведомления и многое другое</div>
+            </div>
+        </div>
+        <div class="yulib-widget-right">
+            <div class="has-tooltip" title="Не удалось подключить уведомления">
+                {{d-icon "bell-slash" class="icon-disabled"}}
+            </div>
+        </div>
+    </a>
+{{/if}}

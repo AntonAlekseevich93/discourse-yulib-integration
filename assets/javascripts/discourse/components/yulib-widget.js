@@ -12,6 +12,11 @@ export default class YulibWidget extends Component {
     @tracked errorMessage = null;
     @tracked avatarFailed = false;
 
+    get settingsUrl() {
+        if (!this.currentUser) { return "#"; }
+        return `/u/${this.currentUser.username.toLowerCase()}/preferences/yulib`;
+    }
+
     get yulibProfile() {
         const profile = this.currentUser?.yulib_profile;
         if (!profile) { return null; }
