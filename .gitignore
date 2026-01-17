@@ -2,3 +2,12 @@
 .DS_Store
 *.log
 /assets/javascripts/discourse/tests/
+
+# Игнорируем папки с установленными библиотеками Ruby
+/.bundle/
+/vendor/bundle/
+/vendor/
+/gems/
+# Лок-файл тоже лучше игнорировать в плагинах,
+# чтобы не конфликтовать с версиями самого Discourse
+Gemfile.lock

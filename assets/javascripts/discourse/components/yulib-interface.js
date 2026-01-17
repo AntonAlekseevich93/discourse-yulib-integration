@@ -137,4 +137,9 @@ export default class YulibInterface extends Component {
     this.codeSent = false;
     this.inputCode = "";
   }
+
+  @action
+  enablePush() {
+    alert("Функционал ручного подключения будет добавлен позже. Попробуйте перепривязать аккаунт.");
+  }
 }

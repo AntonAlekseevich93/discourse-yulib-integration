@@ -18,6 +18,11 @@
   opacity: 1 !important;     /* На случай, если кто-то поставил прозрачность */
   visibility: visible !important;
 }
+
+//кнопка привязать уведомления
+.btn-small, .json-editor-btn-collapse {
+  background: #66ff66;
+}
 /* Иконка верификации */
 /* На случай, если иконка обрезается родителем */
 .names .username {

@@ -1,4 +1,29 @@
 en:
+  site_settings:
+    yulib_integration_enabled: "Enable YuLib integration?"
+    # ... твои старые настройки ...
+
+    # Добавь настройки для пушей
+    yulib_fcm_enabled: "Enable App Push Notifications?"
+    yulib_fcm_project_id: "Firebase Project ID"
+    yulib_fcm_api_key: "Firebase API Key (Server Key)"
+    yulib_fcm_google_json: "Google Service Account JSON (Content)"
+
+  discourse_fcm_notifications:
+    confirm_title: 'App Notifications - Forum Yulib'
+    confirm_body: 'App notifications have been enabled!'
+    popup:
+      mentioned: '%{username} mentioned you in "%{topic}"'
+      group_mentioned: '%{username} mentioned you in "%{topic}"'
+      quoted: '%{username} quoted you in "%{topic}"'
+      replied: '%{username} replied to you in "%{topic}"'
+      posted: '%{username} posted in "%{topic}"'
+      private_message: '%{username} sent you a private message'
+      chat_message: '%{username} sent you a chat message'
+      linked: '%{username} linked to your post from "%{topic}"'
+      edited: '%{username} edited a post in "%{topic}"'
+      liked: '%{username} liked your post in "%{topic}"'
+
   js:
     yulib_integration:
       menu_title: "YuLib Integration"

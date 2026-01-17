@@ -20,3 +20,15 @@ plugins:
   yulib_max_books_per_status:
     default: 30
     client: true
+  # START Настройки пушей (FCM)
+  yulib_fcm_enabled:
+    default: false
+    client: true
+  yulib_fcm_project_id:
+    default: ''
+  yulib_fcm_api_key:
+    default: ''
+  yulib_fcm_google_json:
+    default: ''
+    textarea: true
+  # END Настройки пушей (FCM)

@@ -3,6 +3,25 @@ ru:
     # Имя настройки должно СТРОГО совпадать с именем в settings.yml
     yulib_backend_url: "URL бэкенда приложения YuLib"
     yulib_backend_url_description: "Укажите адрес вашего API (например, http://host.docker.internal:8080)"
+    yulib_fcm_enabled: "Включить Push-уведомления в приложение?"
+    yulib_fcm_project_id: "ID проекта Firebase"
+    yulib_fcm_api_key: "API ключ Firebase"
+    yulib_fcm_google_json: "Содержимое JSON файла сервисного аккаунта"
+
+  discourse_fcm_notifications:
+    confirm_title: 'Уведомления - Форум Юлиб'
+    confirm_body: 'Push-уведомления успешно подключены!'
+    popup:
+      mentioned: '%{username} упомянул вас в "%{topic}"'
+      group_mentioned: '%{username} упомянул вас в "%{topic}"'
+      quoted: '%{username} процитировал вас в "%{topic}"'
+      replied: '%{username} ответил вам в "%{topic}"'
+      posted: '%{username} написал в теме "%{topic}"'
+      private_message: '%{username} отправил вам личное сообщение'
+      chat_message: '%{username} отправил сообщение в чат'
+      linked: '%{username} сослался на вас в "%{topic}"'
+      edited: '%{username} отредактировал пост в "%{topic}"'
+      liked: '%{username} оценил ваш пост в "%{topic}"'
 
   js:
     yulib_integration:
@@ -20,3 +39,5 @@ ru:
       connect_description: "Свяжите аккаунт, чтобы видеть свои книги."
       btn_connect: "Привязать приложение"
       error_invalid_code: "Неверный код"
+      btn_unlink: "Отвязать"
+      enablePush: "Подключить"

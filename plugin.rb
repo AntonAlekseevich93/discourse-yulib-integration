@@ -5,8 +5,17 @@
 # http://localhost:4200/yulib/books
 require 'net/http'
 require 'uri'
+
+# --- 1. ЗАВИСИМОСТИ ДЛЯ ПУШЕЙ ---
+gem 'signet', '0.17.0'
+gem 'os', '1.1.4'
+gem 'memoist', '0.16.2'
+gem 'googleauth', '1.7.0'
+gem 'fcm', '1.0.8'
+
 register_asset 'stylesheets/common/yulib.scss'
 register_svg_icon "check-circle"
+register_svg_icon "unlink"
 after_initialize do
 
   class ::YulibBook < ActiveRecord::Base
@@ -56,6 +65,14 @@ after_initialize do
   User.register_custom_field_type('yulib_user_uuid', :string)
   User.register_custom_field_type('yulib_last_sync_at', :integer)
 
+  # НОВОЕ ПОЛЕ: Для хранения токена пушей
+  User.register_custom_field_type('yulib_push_token', :string)
+  # Разрешаем менять его админам (на всякий случай)
+  allow_staff_user_custom_field 'yulib_push_token'
+  # НОВОЕ ПОЛЕ: Статус подписки (включено/выключено)
+  User.register_custom_field_type('yulib_push_enabled', :boolean)
+  allow_staff_user_custom_field 'yulib_push_enabled'
+
   # 2. БЕЛЫЙ СПИСОК ДЛЯ CURRENT USER (Чтобы данные жили после F5)
   # Мы будем отдавать их группой, но на всякий случай разрешим чтение
   DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_is_linked'
@@ -86,6 +103,40 @@ after_initialize do
   # Разрешаем передачу этого поля на клиент
   add_to_serializer(:post, :yulib_verified) do
     object.user&.custom_fields&.[]('yulib_token').present?
+  end
+
+  # Чтобы фронтенд знал, включены ли пуши
+  add_to_serializer(:user, :yulib_push_enabled) do
+    object.custom_fields['yulib_push_enabled'] == true
+  end
+  add_to_serializer(:current_user, :yulib_push_enabled) do
+    object.custom_fields['yulib_push_enabled'] == true
+  end
+  # END Чтобы фронтенд знал, включены ли пуши
+
+  # --- 4. ПОДКЛЮЧАЕМ ЛОГИКУ ОТПРАВКИ (Pusher) ---
+  # Мы создадим этот файл на следующем шаге
+  require_relative 'lib/yulib_pusher'
+
+  DiscourseEvent.on(:push_notification) do |user, payload|
+    # Проверяем, есть ли у юзера токен и включены ли пуши в настройках
+    if SiteSetting.yulib_fcm_enabled? && user.custom_fields['yulib_push_token'].present?
+      Jobs.enqueue(:send_yulib_push, user_id: user.id, payload: payload)
+    end
+  end
+
+  require_dependency 'jobs/base'
+  module ::Jobs
+    class SendYulibPush < ::Jobs::Base
+      def execute(args)
+        return unless SiteSetting.yulib_fcm_enabled?
+        user = User.find_by(id: args[:user_id])
+        return unless user
+
+        # Вызываем наш класс отправки
+        ::YulibIntegration::Pusher.push(user, args[:payload])
+      end
+    end
   end
 
   module ::YulibIntegration
@@ -291,6 +342,10 @@ after_initialize do
             # Удаляем все книги, связанные с этим пользователем
             deleted_count = YulibBook.where(user_id: user.id).delete_all
             Rails.logger.info "🗑️ [YuLib] Deleted #{deleted_count} books for user #{user.id}"
+
+            # Удаляем токен пушей
+            ::YulibIntegration::Pusher.unsubscribe(user)
+            user.custom_fields['yulib_push_enabled'] = false # <--- Выключаем статус
             # --- ОЧИСТКА ПОЛЕЙ ЮЗЕРА ---
             user.custom_fields['yulib_external_user_id']      = nil
             user.custom_fields['yulib_app_email']    = nil
@@ -331,6 +386,8 @@ after_initialize do
         input_code = params[:code]
         user_id = current_user.id
         user = current_user
+        # --- Токен пушей от приложения ---
+        push_token = params[:push_token]
 
         # 1. Проверка кода в Redis
         redis_key = "yulib_auth_#{user_id}_#{app_email}"
@@ -354,11 +411,37 @@ after_initialize do
         else
           begin
             base_url = SiteSetting.yulib_backend_url.chomp("/")
-            uri = URI("#{base_url}/api/verify-user") # Поменяй адрес если надо
+            uri = URI("#{base_url}/api/verify-user")
+            # Отправляем только email и код
             response = Net::HTTP.post_form(uri, 'email' => app_email, 'code' => input_code)
 
             if response.is_a?(Net::HTTPSuccess)
               data = JSON.parse(response.body)
+
+              # --- ЛОГИКА ПУШЕЙ ---
+              # Берем токен СТРОГО из ответа бэкенда
+              backend_push_token = data["push_token"]
+              if backend_push_token.present?
+                # 1. Сначала сохраняем токен (иначе некуда слать)
+                ::YulibIntegration::Pusher.subscribe(user, backend_push_token)
+                # 2. Пытаемся отправить приветственный пуш
+                # send_success будет true, только если FCM принял сообщение
+                send_success = ::YulibIntegration::Pusher.confirm_subscription(user)
+
+                if send_success
+                  user.custom_fields['yulib_push_enabled'] = true
+                  Rails.logger.info "✅ [YuLib] Welcome push SENT. Push enabled."
+                else
+                  user.custom_fields['yulib_push_enabled'] = false
+                  Rails.logger.warn "⚠️ [YuLib] Welcome push FAILED. Push disabled."
+                end
+
+              else
+                Rails.logger.warn "⚠️ [YuLib] Backend did not return 'push_token'"
+                user.custom_fields['yulib_push_enabled'] = false
+              end
+              # ---END ЛОГИКА ПУШЕЙ ---
+
               external_data = {
                 user_id:  data["id"],
                 email:    data["email"],
