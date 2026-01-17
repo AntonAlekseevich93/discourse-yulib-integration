@@ -58,6 +58,34 @@ after_initialize do
     end
   end
 
+  class ::User
+    def yulib_book_stats
+      # Ключ кэша уникален для юзера
+      cache_key = "yulib_stats_#{self.id}"
+
+      # Пытаемся взять из кэша (живет 12 часов, но мы сбросим его при обновлении)
+      Rails.cache.fetch(cache_key, expires_in: 12.hours) do
+        # SQL-магия: Считаем количество книг каждого статуса одним запросом
+        # Результат будет хэшем: { "id_reading" => 5, "id_done" => 120 }
+        ::YulibBook
+          .where(user_id: self.id)
+          .group(:reading_status)
+          .count
+      end
+    end
+  end
+
+  # 2. Добавляем это поле в сериалайзер, чтобы фронтенд его видел
+  # Добавляем и в User (профиль) и в Post (для отображения в постах)
+  add_to_serializer(:user, :yulib_stats) do
+    object.yulib_book_stats
+  end
+
+  add_to_serializer(:post, :yulib_stats) do
+    object.user&.yulib_book_stats
+  end
+
+
   # 1. РЕГИСТРИРУЕМ ПОЛЯ В БАЗЕ (Типы данных)
   User.register_custom_field_type('yulib_external_user_id', :integer)
   User.register_custom_field_type('yulib_app_email', :string)
@@ -150,7 +178,7 @@ after_initialize do
     class SendYulibPush < ::Jobs::Base
       def execute(args)
         return unless SiteSetting.yulib_fcm_enabled?
-        user = User.find_by(id: args[:user_id])
+        user = ::User.find_by(id: args[:user_id])
         return unless user
 
         # Вызываем наш класс отправки
@@ -243,6 +271,9 @@ after_initialize do
             if payload["updated"].present?
               process_book_updates(user.id, payload["updated"])
             end
+
+            # !!! ВАЖНО: Сбрасываем кэш статистики книг пользователя под каждым постом на форуме которая показывается-!!!
+            Rails.cache.delete("yulib_stats_#{user.id}")
 
             user.custom_fields['yulib_last_sync_at'] = Time.now.to_i
             user.save_custom_fields
@@ -442,6 +473,8 @@ after_initialize do
             # --- УДАЛЕНИЕ КНИГ ---
             # Удаляем все книги, связанные с этим пользователем
             deleted_count = YulibBook.where(user_id: user.id).delete_all
+            # !!! ВАЖНО: Сбрасываем кэш статистики книг пользователя под каждым постом на форуме которая показывается-!!!
+            Rails.cache.delete("yulib_stats_#{user.id}")
             Rails.logger.info "🗑️ [YuLib] Deleted #{deleted_count} books for user #{user.id}"
 
             # Удаляем токен пушей

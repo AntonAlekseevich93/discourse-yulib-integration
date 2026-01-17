@@ -598,3 +598,58 @@
 /* ==================================================== */
 /* END СВЕРНУТЫЙ БАННЕР (COLLAPSED) */
 /* ==================================================== */
+
+
+// Уменьшает отступ от меню до статистики
+.cooked:has(.yulib-stats-neutral) + .post__menu-area {
+  margin-top: 0;
+  padding-top: 5px;
+}
+.yulib-stats-neutral {
+  /* --- ОСНОВНОЙ СТИЛЬ (Нейтральный) --- */
+  background-color: var(--primary-very-low);
+  border-radius: 12px;
+  padding: 12px 12px;
+  margin-top: 8px;
+
+  /* По умолчанию: в строку */
+  display: flex;
+  width: fit-content;    /* Контейнер не на всю ширину */
+  margin-left: auto;     /* Магия: толкает блок максимально вправо */
+  margin-right: 0;
+
+
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+
+  font-size: 0.75em;
+  color: var(--primary-medium);
+  line-height: 1.3;
+
+  .y-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    b {
+      color: #a2a2a2;
+      font-weight: 700;
+    }
+  }
+
+  /* Точки-разделители (только для десктопа) */
+  .y-item:not(:last-child)::after {
+    content: "•";
+    margin-left: 12px;
+    color: var(--primary-low-mid);
+  }
+
+  &:hover {
+    background-color: var(--primary-low);
+    color: var(--primary);
+    .y-item b {
+      color: var(--primary);
+    }
+  }
+}
