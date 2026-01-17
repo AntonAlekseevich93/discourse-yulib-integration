@@ -118,6 +118,10 @@ after_initialize do
     object.user&.custom_fields&.[]('yulib_token').present?
   end
 
+  add_to_serializer(:user_card, :yulib_verified) do
+    object.custom_fields['yulib_token'].present?
+  end
+
   # Чтобы фронтенд знал, включены ли пуши
   add_to_serializer(:user, :yulib_push_enabled) do
     object.custom_fields['yulib_push_enabled'] == true
