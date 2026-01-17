@@ -1,6 +1,6 @@
 # name: discourse-yulib-integration
 # about: External App Integration (Full Profile)
-# version: 0.5.0
+# version: 0.5.1
 # authors: YuLib Team
 # url: https://github.com/AntonAlekseevich93/discourse-yulib-integration
 

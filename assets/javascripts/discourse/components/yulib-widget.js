@@ -9,30 +9,42 @@ import DiscourseURL from "discourse/lib/url";
 export default class YulibWidget extends Component {
     @service currentUser;
     @service siteSettings;
+
     @tracked isLoading = false;
     @tracked errorMessage = null;
     @tracked avatarFailed = false;
+
+    // По умолчанию false, что идеально для гостей
     @tracked isCollapsedLocal = false;
 
 
     constructor() {
         super(...arguments);
 
-        // 1. ПРОВЕРКА: Безопасно получаем данные (добавил ?.)
-        // Если currentUser нет (гость), вернется undefined, код не упадет.
-        const fromRoot = this.currentUser?.yulib_banner_collapsed;
-        const fromCustom = this.currentUser?.custom_fields?.yulib_banner_collapsed;
+        // Если пользователя нет (гость), мы НЕМЕДЛЕННО выходим.
+        // Переменные остаются дефолтными (false), ошибок нет.
+        if (!this.currentUser) {
+            return;
+        }
 
-        console.log("=== YULIB DEBUG ===");
+        // Дальше код выполняется только если this.currentUser существует
+        console.log("=== YULIB DEBUG (User exists) ===");
+
+        // Теперь можно обращаться без опаски
+        const fromRoot = this.currentUser.yulib_banner_collapsed;
+
+        // Для custom_fields нужна проверка, т.к. само поле может быть null даже у юзера
+        const customFields = this.currentUser.custom_fields || {};
+        const fromCustom = customFields.yulib_banner_collapsed;
+
         console.log("Status from Root:", fromRoot);
         console.log("Status from CustomFields:", fromCustom);
 
         // 2. Устанавливаем значение.
-        if (fromRoot !== undefined) {
+        if (fromRoot !== undefined && fromRoot !== null) {
             this.isCollapsedLocal = fromRoot;
         } else {
-            // Фолбэк на старый метод.
-            // Если fromCustom undefined (гость), выражение даст false.
+            // Фолбэк на старый метод
             this.isCollapsedLocal = fromCustom === 'true' || fromCustom === true;
         }
 
@@ -41,9 +53,9 @@ export default class YulibWidget extends Component {
 
     @action
     navigateToSettings(event) {
-        // Если пользователя нет, никуда не идем
-        if (!this.currentUser) return;
+        if (!this.currentUser) return; // Защита
 
+        // Проверка клика на интерактивные элементы
         if (event.target.closest("button") || event.target.closest(".btn") || event.target.closest(".d-icon")) {
             return;
         }
@@ -57,8 +69,9 @@ export default class YulibWidget extends Component {
     }
 
     get yulibProfile() {
-        // Безопасная проверка ?.
-        const profile = this.currentUser?.yulib_profile;
+        if (!this.currentUser) { return null; }
+
+        const profile = this.currentUser.yulib_profile; // Без ?. так как проверили выше
         if (!profile) { return null; }
 
         const host = (this.siteSettings.yulib_avatar_host || "").replace(/\/$/, "");
@@ -70,13 +83,13 @@ export default class YulibWidget extends Component {
     }
 
     get isCollapsed() {
-        // Безопасная проверка ?.
-        return this.currentUser?.custom_fields?.yulib_banner_collapsed === 'true';
+        if (!this.currentUser) return false;
+        // Безопасный доступ к вложенным полям
+        return (this.currentUser.custom_fields && this.currentUser.custom_fields.yulib_banner_collapsed === 'true');
     }
 
     @action
     async toggleBanner() {
-        // Защита: гость не может переключать баннер
         if (!this.currentUser) return;
 
         this.isCollapsedLocal = !this.isCollapsedLocal;
@@ -92,11 +105,12 @@ export default class YulibWidget extends Component {
 
             console.log("Сервер подтвердил сохранение!");
 
+            // Обновляем custom_fields если они есть
             if (this.currentUser.custom_fields) {
                 this.currentUser.custom_fields.yulib_banner_collapsed = this.isCollapsedLocal.toString();
             }
 
-            // Обновляем модель Ember
+            // Обновляем модель
             this.currentUser.set('yulib_banner_collapsed', this.isCollapsedLocal);
 
         } catch (e) {
@@ -106,7 +120,6 @@ export default class YulibWidget extends Component {
 
     @action
     async enablePush() {
-        // Защита: гость не может включать пуши
         if (!this.currentUser) return;
 
         this.isLoading = true;
