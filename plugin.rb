@@ -1,8 +1,11 @@
-# name: yulib-integration
+# name: discourse-yulib-integration
 # about: External App Integration (Full Profile)
 # version: 0.5.0
 # authors: YuLib Team
-# http://localhost:4200/yulib/books
+# url: https://github.com/AntonAlekseevich93/discourse-yulib-integration
+
+enabled_site_setting :yulib_integration_enabled
+
 require 'net/http'
 require 'uri'
 
