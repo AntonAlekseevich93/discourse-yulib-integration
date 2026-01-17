@@ -4,6 +4,7 @@ import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
+import DiscourseURL from "discourse/lib/url";
 
 export default class YulibWidget extends Component {
     @service currentUser;
@@ -35,6 +36,18 @@ export default class YulibWidget extends Component {
         }
 
         console.log("FINAL Local Status:", this.isCollapsedLocal);
+    }
+
+    @action
+    navigateToSettings(event) {
+        // Проверяем: если клик был по кнопке или внутри кнопки...
+        if (event.target.closest("button") || event.target.closest(".btn") || event.target.closest(".d-icon")) {
+            // ... то ничего не делаем, пусть работает кнопка
+            return;
+        }
+
+        // Иначе - переходим на страницу настроек без перезагрузки
+        DiscourseURL.routeTo(this.settingsUrl);
     }
 
     get settingsUrl() {

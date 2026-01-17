@@ -1,7 +1,12 @@
 {{!-- Это виджет на главной привязки приложения --}}
 {{#if this.yulibProfile}}
-{{!-- ВНИМАНИЕ: Здесь меняем класс динамически. Если свернуто - 'collapsed', если нет - твои старые стили --}}
-    <div class="yulib-home-widget {{if this.isCollapsedLocal 'collapsed' 'alert alert-success'}}">
+{{!-- ДОБАВИЛИ: style="cursor: pointer" и {{on "click" ...}} --}}
+    <div
+            class="yulib-home-widget {{if this.isCollapsedLocal 'collapsed' 'alert alert-success'}}"
+            style="cursor: pointer;"
+        {{on "click" this.navigateToSettings}}
+            role="button"
+    >
         <div class="yulib-widget-left">
             <img
                     src="{{this.yulibProfile.avatar}}"
@@ -10,18 +15,15 @@
                 {{on "error" this.handleAvatarError}}
             />
             <div class="yulib-widget-info">
-                {{!-- Если СВЕРНУТО (используем Local): Показываем только имя --}}
                 {{#if this.isCollapsedLocal}}
                     <div class="yulib-widget-user collapsed-name">{{this.yulibProfile.username}}</div>
                 {{else}}
-                {{!-- Если РАЗВЕРНУТО: Твой старый код --}}
                     <div class="yulib-widget-title">{{i18n "yulib_integration.connected"}}</div>
                     <div class="yulib-widget-user">{{this.yulibProfile.username}}</div>
                 {{/if}}
             </div>
         </div>
 
-        {{!-- КНОПКА ПО ЦЕНТРУ (Скрываем, если свернуто) --}}
         {{#unless this.isCollapsedLocal}}
             <div class="yulib-widget-center">
                 {{#unless this.currentUser.yulib_push_enabled}}
@@ -37,13 +39,10 @@
 
         <div class="yulib-widget-right">
             {{#if this.currentUser.yulib_push_enabled}}
-            {{!-- Зеленый колокольчик (скрываем в свернутом виде) --}}
                 {{#unless this.isCollapsedLocal}}
                     {{d-icon "bell" style="color: green;"}}
                 {{/unless}}
 
-            {{!-- Кнопка Свернуть/Развернуть --}}
-            {{!-- Логика: Если свернуто (Local=true) -> иконка ВНИЗ (развернуть). Иначе -> ВВЕРХ --}}
                 <DButton
                         @action={{this.toggleBanner}}
                         @icon={{if this.isCollapsedLocal "angle-down" "angle-up"}}
@@ -58,7 +57,6 @@
         </div>
     </div>
 {{else}}
-{{!-- ТВОЙ СТАРЫЙ БЛОК ДЛЯ СЕРОГО ВИДЖЕТА --}}
     <a href="{{this.settingsUrl}}" class="yulib-home-widget yulib-promo-widget">
         <div class="yulib-widget-left">
             <div class="promo-icon-wrapper">
