@@ -16,8 +16,8 @@
                     <div style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; display: flex; align-items: center; gap: 8px;">
                         {{#if this.currentUser.yulib_push_enabled}}
                         {{!-- Если включено: Зеленая галочка --}}
-                            {{d-icon "check-circle" style="color: green;"}}
-                            <span style="color: green; font-weight: bold;">Push-уведомления активны</span>
+                            {{d-icon "check" style="color: green;"}}
+                            <span style="color: #124026; font-weight: bold;">Push-уведомления активны</span>
                         {{else}}
                         {{!-- Если выключено: Колокольчик и кнопка --}}
                             {{d-icon "bell-slash" style="color: #666;"}}
@@ -34,16 +34,6 @@
                     {{!-- ==================================== --}}
 
                 </div>
-            </div>
-
-            <div style="margin-top: 10px;">
-                <DButton
-                        @label="yulib_integration.btn_unlink"
-                        @action={{this.unlinkProfile}}
-                        @disabled={{this.isLoading}}
-                        class="btn-danger"
-                        @icon="unlink"
-                />
             </div>
 
             <hr>
@@ -85,5 +75,14 @@
         {{#if this.errorMessage}}
             <div class="alert alert-error">{{this.errorMessage}}</div>
         {{/if}}
+    </div>
+    <hr>
+    <div style="margin-top: 10px;">
+        <DButton
+                @label="yulib_integration.btn_unlink"
+                @action={{this.unlinkProfile}}
+                @disabled={{this.isLoading}}
+                class="btn-danger"
+        />
     </div>
 </div>

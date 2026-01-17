@@ -14,7 +14,7 @@ gem 'googleauth', '1.7.0'
 gem 'fcm', '1.0.8'
 
 register_asset 'stylesheets/common/yulib.scss'
-register_svg_icon "check-circle"
+register_svg_icon "check"
 register_svg_icon "unlink"
 after_initialize do
 
@@ -269,6 +269,92 @@ after_initialize do
         86400 # Дефолт при любой ошибке
       end
 
+      def enable_push
+        user = current_user
+
+        # 1. Берем токен авторизации (который мы сохранили при привязке)
+        auth_token = user.custom_fields['yulib_token']
+
+        if auth_token.blank?
+          return render json: {
+            success: false,
+            error: "Нет токена авторизации. Попробуйте перепривязать приложение."
+          }, status: 400
+        end
+
+        # --- ПОПЫТКА №1: Пробуем текущий Push-токен ---
+        current_push_token = user.custom_fields['yulib_push_token']
+
+        if current_push_token.present?
+          if ::YulibIntegration::Pusher.confirm_subscription(user)
+            user.custom_fields['yulib_push_enabled'] = true
+            user.save_custom_fields
+            return render json: { success: true }
+          end
+        end
+
+        Rails.logger.warn "⚠️ [YuLib] Old token failed. Requesting new one via Bearer Auth..."
+
+        # --- ПОПЫТКА №2: Запрос к Ktor с Bearer Token ---
+        begin
+          base_url = SiteSetting.yulib_backend_url.chomp("/")
+          uri = URI("#{base_url}/api/refresh-push-token")
+
+          # Создаем HTTP клиент
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = (uri.scheme == "https")
+
+          # Создаем POST запрос
+          request = Net::HTTP::Post.new(uri)
+
+          # --- ВАЖНО: Ставим заголовок Authorization ---
+          request["Authorization"] = "Bearer #{auth_token}"
+          request["Content-Type"] = "application/json"
+          # ---------------------------------------------
+
+          # Отправляем
+          response = http.request(request)
+
+          if response.is_a?(Net::HTTPSuccess)
+            data = JSON.parse(response.body)
+            new_push_token = data["push_token"]
+
+            if new_push_token.present?
+              # Обновляем токен
+              ::YulibIntegration::Pusher.subscribe(user, new_push_token)
+
+              # Пробуем снова отправить пуш
+              if ::YulibIntegration::Pusher.confirm_subscription(user)
+                user.custom_fields['yulib_push_enabled'] = true
+                user.save_custom_fields
+                Rails.logger.info "✅ [YuLib] Push enabled via FRESH token."
+                return render json: { success: true }
+              else
+                error_msg = "Google не принял новый токен."
+              end
+            else
+              error_msg = "Бэкенд не вернул push_token."
+            end
+          else
+            # Если Ktor ответил 401, значит токен протух
+            if response.code == "401"
+              error_msg = "Сессия истекла (401). Перепривяжите приложение."
+            else
+              error_msg = "Ошибка бэкенда: #{response.code}"
+            end
+          end
+        rescue => e
+          error_msg = "Ошибка сети: #{e.message}"
+        end
+
+        # --- ФИНАЛ ---
+        user.custom_fields['yulib_push_enabled'] = false
+        user.save_custom_fields
+        Rails.logger.error "❌ [YuLib] Enable push failed: #{error_msg}"
+
+        render json: { success: false, error: error_msg }, status: 502
+      end
+
       def request_code
         app_email = params[:app_email]       # Почта приложения (ввел юзер в поле)
         forum_email = current_user.email     # Почта юзера на форуме
@@ -485,6 +571,7 @@ after_initialize do
     get  "/yulib/books"        => "yulib_integration/yulib#list_books"
     # Добавляем маршрут для отвязки
     post "/yulib/unlink"       => "yulib_integration/yulib#unlink"
+    post "/yulib/enable-push" => "yulib_integration/yulib#enable_push"
     # Это говорит Rails: "Для этой ссылки используй контроллер настроек пользователя"
     get "/u/:username/preferences/yulib" => "users#preferences", constraints: { username: /[^\/]+/ }
   end

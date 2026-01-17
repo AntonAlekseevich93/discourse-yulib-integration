@@ -4,7 +4,7 @@ import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
-
+import I18n from "I18n";
 export default class YulibInterface extends Component {
   @service currentUser;
 
@@ -75,7 +75,7 @@ export default class YulibInterface extends Component {
   @action
   async unlinkProfile() {
     // 1. Спрашиваем подтверждение (хорошая практика UX)
-    if (!confirm("Вы уверены, что хотите отвязать аккаунт приложения?")) {
+    if (!confirm(I18n.t("yulib_integration.unlink_confirm"))) {
       return;
     }
 
@@ -139,7 +139,37 @@ export default class YulibInterface extends Component {
   }
 
   @action
-  enablePush() {
-    alert("Функционал ручного подключения будет добавлен позже. Попробуйте перепривязать аккаунт.");
+  async enablePush() {
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    try {
+      // 1. Шлем запрос на наш новый метод
+      await ajax("/yulib/enable-push", { type: "POST" });
+
+      // 2. Если успех (не вылетело в catch) - обновляем статус
+      this.currentUser.set("yulib_push_enabled", true);
+
+      // Можно показать всплывающее уведомление, что все ок
+      // (В Discourse это делается так, если хочешь):
+      // const { icon } = require("discourse-common/lib/icon-library");
+      // document.querySelector(".d-header").insertAdjacentHTML("afterend", "...");
+      // Но у нас и так галочка появится, этого достаточно.
+
+    } catch (error) {
+      // 3. Если ошибка (502 или 400)
+      this.currentUser.set("yulib_push_enabled", false);
+
+      // Вытаскиваем текст ошибки с сервера, если он есть
+      let msg = "Ошибка подключения уведомлений";
+      if (error.jqXHR && error.jqXHR.responseJSON && error.jqXHR.responseJSON.error) {
+        msg = error.jqXHR.responseJSON.error;
+      }
+
+      // Показываем стандартный попап с ошибкой
+      popupAjaxError({ message: msg }); // Или просто alert(msg)
+    } finally {
+      this.isLoading = false;
+    }
   }
 }
