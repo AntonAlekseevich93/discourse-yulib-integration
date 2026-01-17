@@ -32,3 +32,6 @@ plugins:
     default: ''
     textarea: true
   # END Настройки пушей (FCM)
+  yulib_avatar_host:
+    default: "https://s3.timeweb.cloud/13109edd-5c7f9725-5507-4e66-8f9a-c54f7bf66003/users/avatars/"
+    client: true

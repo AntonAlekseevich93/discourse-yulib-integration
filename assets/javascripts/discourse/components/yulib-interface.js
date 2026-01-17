@@ -112,24 +112,47 @@ export default class YulibInterface extends Component {
       const result = await ajax("/yulib/verify-code", {
         type: "POST",
         data: {
-          app_email: this.appEmail,        // Почта для проверки кода
-          forum_email: this.currentUser.email, // Почта форума
-          code: this.inputCode             // Сам код
+          app_email: this.appEmail,
+          forum_email: this.currentUser.email,
+          code: this.inputCode
         }
       });
 
-      // Обновляем локально
-      this.yulibProfile = result.yulib_profile;
+      // 1. Сначала подготавливаем данные
+      const profile = result.yulib_profile;
 
-      // Обновляем глобально (для F5) - Ember сам смерджит это
-      this.currentUser.set("yulib_profile", result.yulib_profile);
+      // Безопасное получение хоста (проверяем наличие siteSettings)
+      const host = this.siteSettings?.yulib_avatar_host || "";
+      const avatarHost = host.replace(/\/$/, "");
+
+      if (profile && !profile.avatar && profile.uuid) {
+        profile.avatar = `${avatarHost}/${profile.uuid}.jpg`;
+      }
+
+      // 2. ОБНОВЛЯЕМ ЛОКАЛЬНЫЕ СВОЙСТВА (используем измененный profile!)
+      this.yulibProfile = profile;
+
+      // 3. ОБНОВЛЯЕМ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ
+      this.currentUser.set("yulib_profile", profile);
 
       this.codeSent = false;
-    } catch {
-      this.errorMessage = "Неверный код";
+    } catch (error) {
+      // ВЫВОДИМ РЕАЛЬНУЮ ОШИБКУ В КОНСОЛЬ, чтобы не гадать
+      console.error("Ошибка в verifyCode:", error);
+
+      if (error.status === 403) {
+        this.errorMessage = "Неверный код";
+      } else {
+        this.errorMessage = "Произошла системная ошибка";
+      }
     } finally {
       this.isLoading = false;
     }
+  }
+
+  @action
+  handleAvatarError(event) {
+    event.target.src = "/images/avatar.png";
   }
 
   @action

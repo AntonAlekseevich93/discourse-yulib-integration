@@ -498,27 +498,29 @@ after_initialize do
               if backend_tokens.present? && backend_tokens.any?
                 ::YulibIntegration::Pusher.subscribe(user, backend_tokens)
 
-                # 2. Шлем приветствие (на все устройства)
-                # Если хотя бы на одно дошло - success = true
-                if ::YulibIntegration::Pusher.confirm_subscription(user)
-                  user.custom_fields['yulib_push_enabled'] = true
+                # Мы просто пробуем отправить,
+                # но это НЕ должно влиять на успех авторизации профиля
+                send_success = ::YulibIntegration::Pusher.confirm_subscription(user)
+                user.custom_fields['yulib_push_enabled'] = send_success
+
+                if send_success
                   Rails.logger.info "✅ [YuLib] Welcome push SENT."
                 else
-                  user.custom_fields['yulib_push_enabled'] = false
-                  Rails.logger.warn "⚠️ [YuLib] Welcome push FAILED (no devices received it)."
+                  Rails.logger.warn "⚠️ [YuLib] Welcome push FAILED, but continuing login..."
                 end
               else
-                # Токенов нет вообще
                 user.custom_fields['yulib_push_enabled'] = false
               end
               # ---END ЛОГИКА ПУШЕЙ ---
 
+              avatar_host = SiteSetting.yulib_avatar_host.chomp("/")
+              # avatar_url
               external_data = {
                 user_id:  data["id"],
                 email:    data["email"],
                 token:    data["token"],
                 username: data["username"],
-                avatar:   data["avatar_url"],
+                avatar:   "#{avatar_host}/#{data["uuid"]}.jpg",
                 uuid:     data["uuid"]
               }
             else

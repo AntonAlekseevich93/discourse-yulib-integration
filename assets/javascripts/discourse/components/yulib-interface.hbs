@@ -5,12 +5,18 @@
 
         {{#if this.isLinked}}
             <div class="alert alert-success" style="display: flex; align-items: center; gap: 15px;">
-                <img src="{{this.yulibProfile.avatar}}" style="width: 50px; height: 50px; border-radius: 50%;" />
+                <img
+                        src="{{this.yulibProfile.avatar}}"
+                        style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"
+                        class="yulib-user-avatar"
+                    {{on "error" this.handleAvatarError}}
+                />
 
                 <div>
                     <strong>{{i18n "yulib_integration.connected"}}</strong><br>
                     {{i18n "yulib_integration.app_user"}}: {{this.yulibProfile.username}} <br>
-                    <span style="font-size: 0.8em; color: #666;">ID: {{this.yulibProfile.user_id}} | UUID: {{this.yulibProfile.uuid}}</span>
+                    <span style="font-size: 0.8em; color: #666;">ID: {{this.yulibProfile.user_id}}
+                        | UUID: {{this.yulibProfile.uuid}}</span>
 
                     {{!-- === НОВЫЙ БЛОК: СТАТУС ПУШЕЙ === --}}
                     <div style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; display: flex; align-items: center; gap: 8px;">
@@ -61,10 +67,12 @@
             {{#if this.codeSent}}
                 <p>{{i18n "yulib_integration.code_sent"}}</p>
 
-                <Input @type="text" @value={{this.inputCode}} class="input-small" placeholder={{i18n "yulib_integration.placeholder_code"}} />
+                <Input @type="text" @value={{this.inputCode}} class="input-small" placeholder={{i18n
+                        "yulib_integration.placeholder_code"}} />
 
-                <DButton @label={{i18n "yulib_integration.btn_verify"}} @action={{this.verifyCode}} @disabled={{this.isLoading}} class="btn-primary" />
-                <DButton @label={{i18n "yulib_integration.btn_cancel"}} @action={{this.reset}} class="btn-flat" />
+                <DButton @label={{i18n "yulib_integration.btn_verify"}} @action={{this.verifyCode}}
+                         @disabled={{this.isLoading}} class="btn-primary"/>
+                <DButton @label={{i18n "yulib_integration.btn_cancel"}} @action={{this.reset}} class="btn-flat"/>
             {{else}}
                 <p class="description">{{i18n "yulib_integration.connect_description"}}</p>
                 <div style="margin-bottom: 10px;">
@@ -76,7 +84,8 @@
                             placeholder="example@app.com"
                     />
                 </div>
-                <DButton @label="yulib_integration.btn_connect" @action={{this.requestCode}} @disabled={{this.isLoading}} class="btn-primary" />
+                <DButton @label="yulib_integration.btn_connect" @action={{this.requestCode}}
+                         @disabled={{this.isLoading}} class="btn-primary"/>
             {{/if}}
 
         {{/if}}

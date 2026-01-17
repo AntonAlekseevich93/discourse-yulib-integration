@@ -177,7 +177,13 @@
     }
   }
 }
-
+/* делаем аватарку-заглушку серой и полупрозрачной */
+.yulib-user-avatar[src*="avatar.png"] {
+  filter: grayscale(1) brightness(0.8);
+  background: #000000;
+  padding: 0.1em;
+  opacity: 0.7;
+}
 
 .alert.alert-success {
   border-radius: 14px;
