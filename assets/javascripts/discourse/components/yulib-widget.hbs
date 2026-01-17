@@ -24,39 +24,62 @@
             </div>
         </div>
 
+        {{!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ (Кнопка включения пушей) --}}
         {{#unless this.isCollapsedLocal}}
             <div class="yulib-widget-center">
-                {{#unless this.currentUser.yulib_push_enabled}}
-                    <DButton
-                            @label="yulib_integration.enablePush"
-                            @action={{this.enablePush}}
-                            @icon="bell"
-                            class="btn-small btn-primary yulib-enable-btn"
-                    />
-                {{/unless}}
+                {{!-- БЕЗОПАСНОСТЬ: Проверяем currentUser перед чтением свойства --}}
+                {{#if this.currentUser}}
+                    {{#unless this.currentUser.yulib_push_enabled}}
+                        <DButton
+                                @label="yulib_integration.enablePush"
+                                @action={{this.enablePush}}
+                                @icon="bell"
+                                class="btn-small btn-primary yulib-enable-btn"
+                        />
+                    {{/unless}}
+                {{/if}}
             </div>
         {{/unless}}
 
+        {{!-- ПРАВАЯ ЧАСТЬ (Иконки статуса и Сворачивание) --}}
         <div class="yulib-widget-right">
-            {{#if this.currentUser.yulib_push_enabled}}
-                {{#unless this.isCollapsedLocal}}
-                    {{d-icon "bell" style="color: green;"}}
-                {{/unless}}
+            {{!-- БЕЗОПАСНОСТЬ: Оборачиваем логику в проверку пользователя --}}
+            {{#if this.currentUser}}
+                {{#if this.currentUser.yulib_push_enabled}}
+                {{!-- Если пуши включены --}}
+                    {{#unless this.isCollapsedLocal}}
+                        {{d-icon "bell" style="color: green;"}}
+                    {{/unless}}
 
-                <DButton
-                        @action={{this.toggleBanner}}
-                        @icon={{if this.isCollapsedLocal "angle-down" "angle-up"}}
-                        class="btn-flat yulib-toggle-btn"
-                        @title={{if this.isCollapsedLocal "Развернуть" "Свернуть"}}
-                />
-            {{else}}
-                <div class="has-tooltip" title="Не удалось подключить уведомления">
-                    {{d-icon "bell-slash" style="color: var(--primary-medium);"}}
-                </div>
+                    {{!-- Кнопка сворачивания доступна, когда пуши работают --}}
+                    <DButton
+                            @action={{this.toggleBanner}}
+                            @icon={{if this.isCollapsedLocal "angle-down" "angle-up"}}
+                            class="btn-flat yulib-toggle-btn"
+                            @title={{if this.isCollapsedLocal "Развернуть" "Свернуть"}}
+                    />
+                {{else}}
+                {{!-- Если пуши выключены --}}
+                    <div class="has-tooltip" title="Не удалось подключить уведомления">
+                        {{d-icon "bell-slash" style="color: var(--primary-medium);"}}
+                    </div>
+
+                    {{!-- СОВЕТ: Я добавил кнопку сворачивания СЮДА ТОЖЕ.
+                          Раньше, если пуши не работали, пользователь НЕ МОГ свернуть баннер.
+                          Теперь сможет. --}}
+                    <DButton
+                            @action={{this.toggleBanner}}
+                            @icon={{if this.isCollapsedLocal "angle-down" "angle-up"}}
+                            class="btn-flat yulib-toggle-btn"
+                            @title={{if this.isCollapsedLocal "Развернуть" "Свернуть"}}
+                    />
+                {{/if}}
             {{/if}}
         </div>
     </div>
 {{else}}
+{{!-- БЛОК ДЛЯ ГОСТЕЙ ИЛИ НЕПРИВЯЗАННЫХ (Promo Widget) --}}
+{{!-- settingsUrl внутри JS уже безопасен --}}
     <a href="{{this.settingsUrl}}" class="yulib-home-widget yulib-promo-widget">
         <div class="yulib-widget-left">
             <div class="promo-icon-wrapper">
