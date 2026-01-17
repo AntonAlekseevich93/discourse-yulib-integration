@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 require "net/https"
+require "json"
 
 module ::YulibIntegration
   class Pusher
 
-    # Формируем сообщение и отправляем
+    # Формируем сообщение и отправляем НА ВСЕ устройства
     def self.push(user, payload)
       message = {
         title: self.get_title(payload),
@@ -14,39 +15,34 @@ module ::YulibIntegration
       self.send_notification(user, message)
     end
 
-    # Сохранение токена
-    def self.subscribe(user, token)
-      return if token.blank?
+    # Сохранение списка токенов (принимаем Array)
+    def self.subscribe(user, tokens)
+      # Превращаем в массив, убираем дубли и пустые, сохраняем как JSON
+      safe_tokens = Array(tokens).flatten.compact.uniq
 
-      if user.custom_fields['yulib_push_token'] != token
-        user.custom_fields['yulib_push_token'] = token
-        user.save_custom_fields(true)
-        Rails.logger.info "📱 [YuLib] New FCM token saved for user #{user.username}"
-      end
+      return if safe_tokens.empty?
+
+      # Сохраняем в НОВОЕ поле во множественном числе
+      user.custom_fields['yulib_push_tokens'] = safe_tokens.to_json
+      user.save_custom_fields(true)
+      Rails.logger.info "📱 [YuLib] Saved #{safe_tokens.size} tokens for #{user.username}"
     end
 
-    # Удаление токена
+    # Полная отписка (удаляем все токены)
     def self.unsubscribe(user)
-      if user.custom_fields['yulib_push_token'].present?
-        user.custom_fields.delete('yulib_push_token')
-        user.save_custom_fields(true)
-      end
+      user.custom_fields.delete('yulib_push_tokens')
+      user.save_custom_fields(true)
     end
 
-    # --- ВОТ ЭТОТ НОВЫЙ МЕТОД, КОТОРЫЙ МЫ ДОБАВЛЯЛИ ---
+    # Приветственный пуш (возвращает true, если ХОТЯ БЫ ОДИН прошел)
     def self.confirm_subscription(user)
       message = {
-        title: I18n.t(
-          "discourse_fcm_notifications.confirm_title",
-          site_title: SiteSetting.title
-        ),
+        title: I18n.t("discourse_fcm_notifications.confirm_title", site_title: SiteSetting.title),
         message: I18n.t("discourse_fcm_notifications.confirm_body"),
         url: "#{Discourse.base_url}"
       }
-      # Возвращаем результат (true/false)
       return self.send_notification(user, message)
     end
-    # --------------------------------------------------
 
     private
 
@@ -61,59 +57,82 @@ module ::YulibIntegration
       )
     end
 
+    # Основной метод рассылки
     def self.send_notification(user, message_hash)
       return false unless user && message_hash
 
+      # 1. Проверяем файл ключа
       filename = "yulib_gcp_key.json"
-
       if !File.exist?(filename) && SiteSetting.yulib_fcm_google_json.present?
         File.open(filename, 'w') { |file| file.write(SiteSetting.yulib_fcm_google_json) }
       end
+      return false unless File.exist?(filename)
 
-      unless File.exist?(filename)
-        Rails.logger.warn "⚠️ [YuLib] FCM Error: Missing google json key file"
-        return false
+      # 2. Получаем токены
+      raw_tokens = user.custom_fields['yulib_push_tokens']
+      return false if raw_tokens.blank?
+
+      # Парсим JSON. Если там старый формат (строка), превращаем в массив
+      begin
+        tokens_list = JSON.parse(raw_tokens)
+      rescue JSON::ParserError
+        tokens_list = [raw_tokens] # Обратная совместимость
       end
+
+      tokens_list = Array(tokens_list).compact.uniq
+      return false if tokens_list.empty?
 
       fcm = FCM.new(SiteSetting.yulib_fcm_api_key, filename, SiteSetting.yulib_fcm_project_id)
-      token = user.custom_fields['yulib_push_token']
 
-      unless token
-        return false
+      success_count = 0
+      tokens_to_remove = []
+
+      # 3. ЦИКЛ ПО ВСЕМ ТОКЕНАМ
+      tokens_list.each do |token|
+        payload = {
+          'token': token,
+          'data': { "link" => message_hash[:url] },
+          'notification': {
+            title: message_hash[:title],
+            body: message_hash[:message],
+          },
+          'android': { "priority": "normal" },
+          'apns': {
+            headers: { "apns-priority": "5" },
+            payload: { aps: { "category": "NEW_MESSAGE", "sound": "default" } },
+          }
+        }
+
+        response = fcm.send_v1(payload)
+
+        if response[:response] == 'success'
+          success_count += 1
+        else
+          # Если токен невалиден (404/400/410), помечаем на удаление
+          if [400, 404, 410].include?(response[:status_code])
+            tokens_to_remove << token
+          else
+            Rails.logger.error "❌ [YuLib] FCM Error for user #{user.username}: #{response[:status_code]} - #{response[:body]}"
+          end
+        end
       end
 
-      payload = {
-        'token': token,
-        'data': {
-          "link" => message_hash[:url]
-        },
-        'notification': {
-          title: message_hash[:title],
-          body: message_hash[:message],
-        },
-        'android': {
-          "priority": "normal",
-        },
-        'apns': {
-          headers: { "apns-priority": "5" },
-          payload: {
-            aps: { "category": "NEW_MESSAGE", "sound": "default" }
-          },
-        }
-      }
+      # 4. Чистка мертвых токенов
+      if tokens_to_remove.any?
+        tokens_list -= tokens_to_remove
+        if tokens_list.empty?
+          self.unsubscribe(user) # Все токены сдохли
+        else
+          user.custom_fields['yulib_push_tokens'] = tokens_list.to_json
+          user.save_custom_fields(true)
+        end
+        Rails.logger.warn "🧹 [YuLib] Removed #{tokens_to_remove.size} dead tokens for #{user.username}"
+      end
 
-      response = fcm.send_v1(payload)
-
-      if response[:response] == 'success'
-        Rails.logger.info "🚀 [YuLib] Push sent to #{user.username}"
+      if success_count > 0
+        Rails.logger.info "🚀 [YuLib] Push sent to #{success_count} devices for #{user.username}"
         return true
       else
-        if response[:status_code] == 404 || response[:status_code] == 400
-          Rails.logger.warn "⚠️ [YuLib] Bad token for #{user.username}, removing..."
-          self.unsubscribe(user)
-        else
-          Rails.logger.error "❌ [YuLib] FCM Error: #{response[:status_code]} - #{response[:body]}"
-        end
         return false
       end
     end

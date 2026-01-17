@@ -36,7 +36,7 @@ ru:
       placeholder_code: "123456"
       btn_verify: "Подтвердить"
       btn_cancel: "Отмена"
-      connect_description: "Свяжите аккаунт, чтобы видеть свои книги."
+      connect_description: "Свяжите аккаунт, чтобы видеть свои книги и получать уведомления."
       btn_connect: "Привязать приложение"
       error_invalid_code: "Неверный код"
       btn_unlink: "Отвязать форум от приложения"

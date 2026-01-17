@@ -47,6 +47,15 @@
                 <YulibBooksList @books={{this.books}} />
             {{/if}}
 
+            <hr>
+            <div style="margin-top: 10px;">
+                <DButton
+                        @label="yulib_integration.btn_unlink"
+                        @action={{this.unlinkProfile}}
+                        @disabled={{this.isLoading}}
+                        class="btn-danger"
+                />
+            </div>
         {{else}}
 
             {{#if this.codeSent}}
@@ -67,7 +76,7 @@
                             placeholder="example@app.com"
                     />
                 </div>
-                <DButton @label={{i18n "yulib_integration.btn_connect"}} @action={{this.requestCode}} @disabled={{this.isLoading}} class="btn-primary" />
+                <DButton @label="yulib_integration.btn_connect" @action={{this.requestCode}} @disabled={{this.isLoading}} class="btn-primary" />
             {{/if}}
 
         {{/if}}
@@ -76,13 +85,5 @@
             <div class="alert alert-error">{{this.errorMessage}}</div>
         {{/if}}
     </div>
-    <hr>
-    <div style="margin-top: 10px;">
-        <DButton
-                @label="yulib_integration.btn_unlink"
-                @action={{this.unlinkProfile}}
-                @disabled={{this.isLoading}}
-                class="btn-danger"
-        />
-    </div>
+
 </div>

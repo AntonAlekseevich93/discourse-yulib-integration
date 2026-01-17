@@ -271,87 +271,68 @@ after_initialize do
 
       def enable_push
         user = current_user
-
-        # 1. Берем токен авторизации (который мы сохранили при привязке)
         auth_token = user.custom_fields['yulib_token']
 
         if auth_token.blank?
-          return render json: {
-            success: false,
-            error: "Нет токена авторизации. Попробуйте перепривязать приложение."
-          }, status: 400
+          return render json: { success: false, error: "Нет токена авторизации." }, status: 400
         end
 
-        # --- ПОПЫТКА №1: Пробуем текущий Push-токен ---
-        current_push_token = user.custom_fields['yulib_push_token']
-
-        if current_push_token.present?
-          if ::YulibIntegration::Pusher.confirm_subscription(user)
-            user.custom_fields['yulib_push_enabled'] = true
-            user.save_custom_fields
-            return render json: { success: true }
-          end
+        # ПОПЫТКА 1: Пробуем отправить на то, что уже есть в базе
+        # (Pusher сам возьмет список из yulib_push_tokens)
+        if ::YulibIntegration::Pusher.confirm_subscription(user)
+          user.custom_fields['yulib_push_enabled'] = true
+          user.save_custom_fields
+          return render json: { success: true }
         end
 
-        Rails.logger.warn "⚠️ [YuLib] Old token failed. Requesting new one via Bearer Auth..."
+        Rails.logger.warn "⚠️ [YuLib] Cached tokens failed. Refreshing from Backend..."
 
-        # --- ПОПЫТКА №2: Запрос к Ktor с Bearer Token ---
+        # ПОПЫТКА 2: Запрашиваем актуальный список у Ktor
         begin
           base_url = SiteSetting.yulib_backend_url.chomp("/")
           uri = URI("#{base_url}/api/refresh-push-token")
 
-          # Создаем HTTP клиент
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = (uri.scheme == "https")
-
-          # Создаем POST запрос
           request = Net::HTTP::Post.new(uri)
-
-          # --- ВАЖНО: Ставим заголовок Authorization ---
-          request["Authorization"] = "Bearer #{auth_token}"
+          request["Authorization"] = "Bearer #{auth_token}" # Авторизация по токену
           request["Content-Type"] = "application/json"
-          # ---------------------------------------------
 
-          # Отправляем
           response = http.request(request)
 
           if response.is_a?(Net::HTTPSuccess)
             data = JSON.parse(response.body)
-            new_push_token = data["push_token"]
 
-            if new_push_token.present?
-              # Обновляем токен
-              ::YulibIntegration::Pusher.subscribe(user, new_push_token)
+            # Ждем массив push_tokens
+            new_tokens = data["push_tokens"]
 
-              # Пробуем снова отправить пуш
+            # Обратная совместимость на всякий случай
+            new_tokens = [new_tokens] if new_tokens.is_a?(String)
+
+            if new_tokens.present? && new_tokens.any?
+              # Обновляем список в базе
+              ::YulibIntegration::Pusher.subscribe(user, new_tokens)
+
+              # Пробуем снова
               if ::YulibIntegration::Pusher.confirm_subscription(user)
                 user.custom_fields['yulib_push_enabled'] = true
                 user.save_custom_fields
-                Rails.logger.info "✅ [YuLib] Push enabled via FRESH token."
                 return render json: { success: true }
               else
-                error_msg = "Google не принял новый токен."
+                error_msg = "Google не принял ни один из новых токенов."
               end
             else
-              error_msg = "Бэкенд не вернул push_token."
+              error_msg = "Бэкенд вернул пустой список токенов."
             end
           else
-            # Если Ktor ответил 401, значит токен протух
-            if response.code == "401"
-              error_msg = "Сессия истекла (401). Перепривяжите приложение."
-            else
-              error_msg = "Ошибка бэкенда: #{response.code}"
-            end
+            error_msg = response.code == "401" ? "Сессия истекла. Перепривяжитесь." : "Ошибка бэкенда: #{response.code}"
           end
         rescue => e
           error_msg = "Ошибка сети: #{e.message}"
         end
 
-        # --- ФИНАЛ ---
         user.custom_fields['yulib_push_enabled'] = false
         user.save_custom_fields
-        Rails.logger.error "❌ [YuLib] Enable push failed: #{error_msg}"
-
         render json: { success: false, error: error_msg }, status: 502
       end
 
@@ -506,24 +487,28 @@ after_initialize do
 
               # --- ЛОГИКА ПУШЕЙ ---
               # Берем токен СТРОГО из ответа бэкенда
-              backend_push_token = data["push_token"]
-              if backend_push_token.present?
-                # 1. Сначала сохраняем токен (иначе некуда слать)
-                ::YulibIntegration::Pusher.subscribe(user, backend_push_token)
-                # 2. Пытаемся отправить приветственный пуш
-                # send_success будет true, только если FCM принял сообщение
-                send_success = ::YulibIntegration::Pusher.confirm_subscription(user)
+              backend_tokens = data["push_tokens"] # <--- Plural (множественное число)
 
-                if send_success
+              # Если бэк прислал по-старому (строку), оборачиваем в массив
+              if backend_tokens.is_a?(String)
+                backend_tokens = [backend_tokens]
+              end
+
+              # 1. Сохраняем список
+              if backend_tokens.present? && backend_tokens.any?
+                ::YulibIntegration::Pusher.subscribe(user, backend_tokens)
+
+                # 2. Шлем приветствие (на все устройства)
+                # Если хотя бы на одно дошло - success = true
+                if ::YulibIntegration::Pusher.confirm_subscription(user)
                   user.custom_fields['yulib_push_enabled'] = true
-                  Rails.logger.info "✅ [YuLib] Welcome push SENT. Push enabled."
+                  Rails.logger.info "✅ [YuLib] Welcome push SENT."
                 else
                   user.custom_fields['yulib_push_enabled'] = false
-                  Rails.logger.warn "⚠️ [YuLib] Welcome push FAILED. Push disabled."
+                  Rails.logger.warn "⚠️ [YuLib] Welcome push FAILED (no devices received it)."
                 end
-
               else
-                Rails.logger.warn "⚠️ [YuLib] Backend did not return 'push_token'"
+                # Токенов нет вообще
                 user.custom_fields['yulib_push_enabled'] = false
               end
               # ---END ЛОГИКА ПУШЕЙ ---
