@@ -62,20 +62,16 @@ after_initialize do
     end
   end
 
-  class ::User
-    def yulib_book_stats
-      # Ключ кэша уникален для юзера
-      cache_key = "yulib_stats_#{self.id}"
+  add_to_class(:user, :yulib_book_stats) do
+    # Ключ кэша уникален для юзера
+    cache_key = "yulib_stats_#{self.id}"
 
-      # Пытаемся взять из кэша (живет 12 часов, но мы сбросим его при обновлении)
-      Rails.cache.fetch(cache_key, expires_in: 12.hours) do
-        # SQL-магия: Считаем количество книг каждого статуса одним запросом
-        # Результат будет хэшем: { "id_reading" => 5, "id_done" => 120 }
-        ::YulibBook
-          .where(user_id: self.id)
-          .group(:reading_status)
-          .count
-      end
+    # Пытаемся взять из кэша (живет 12 часов, но мы сбросим его при обновлении)
+    Rails.cache.fetch(cache_key, expires_in: 12.hours) do
+      ::YulibBook
+        .where(user_id: self.id)
+        .group(:reading_status)
+        .count
     end
   end
 
@@ -120,7 +116,13 @@ after_initialize do
   # Мы будем отдавать их группой, но на всякий случай разрешим чтение
   DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_is_linked'
   DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_profile_data'
-
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_external_user_id'
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_app_email'
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_token'
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_app_username'
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_user_avatar'
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_user_uuid'
+  DiscoursePluginRegistry.serialized_current_user_fields << 'yulib_push_enabled'
   # 3. НАСТРОЙКА СЕРИАЛАЙЗЕРА (Как отдавать данные на фронт)
   # Мы создадим виртуальное поле 'yulib_profile', которое соберет всё в один объект
   add_to_serializer(:current_user, :yulib_profile) do
