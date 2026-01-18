@@ -64,7 +64,7 @@ export default class YulibWidget extends Component {
     }
 
     get settingsUrl() {
-        if (!this.currentUser) { return "#"; }
+        if (!this.currentUser) { return "/signup"; }
         return `/u/${this.currentUser.username.toLowerCase()}/preferences/yulib`;
     }
 
