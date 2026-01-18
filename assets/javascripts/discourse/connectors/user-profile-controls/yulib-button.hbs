@@ -1,0 +1,7 @@
+{{!-- КНОПКА ИНТЕГРАЦИЯ С ЮЛИБ В ПРОФИЛЕ --}}
+{{#if this.model.can_edit}}
+  <a href="/u/{{this.model.username}}/preferences/yulib" class="btn btn-default yulib-profile-btn">
+    {{d-icon "book"}}
+    <span>{{i18n "yulib_integration.menu_title"}}</span>
+  </a>
+{{/if}}
