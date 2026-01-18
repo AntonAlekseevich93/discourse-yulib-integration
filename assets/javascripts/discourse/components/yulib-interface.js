@@ -208,4 +208,15 @@ export default class YulibInterface extends Component {
       this.isLoading = false;
     }
   }
+
+  @action
+  copyToClipboard(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      // Если в плагине доступен Toast, он покажет уведомление
+      console.log("Copied:", text);
+    }).catch(err => {
+      console.error("Ошибка копирования:", err);
+    });
+  }
 }

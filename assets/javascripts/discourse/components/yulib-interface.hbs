@@ -1,100 +1,111 @@
 <div class="control-group yulib-integration">
-    <label class="control-label">{{i18n "yulib_integration.app_integration_label"}}</label>
+  <label class="control-label">{{i18n "yulib_integration.app_integration_label"}}</label>
 
-    <div class="controls">
+  <div class="controls">
 
-        {{#if this.isLinked}}
-            <div class="alert alert-success" style="display: flex; align-items: center; gap: 15px;">
-                <img
-                        src="{{this.yulibProfile.avatar}}"
-                        style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"
-                        class="yulib-user-avatar"
-                    {{on "error" this.handleAvatarError}}
-                />
+    {{#if this.isLinked}}
+      <div class="alert alert-success" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; height: auto; min-height: 70px; padding: 10px;">        <img
+          src="{{this.yulibProfile.avatar}}"
+          style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"
+          class="yulib-user-avatar"
+          {{on "error" this.handleAvatarError}}
+        />
 
-                <div>
-                    <strong>{{i18n "yulib_integration.connected"}}</strong><br>
-                    {{i18n "yulib_integration.app_user"}}: {{this.yulibProfile.username}} <br>
-                    <span style="font-size: 0.8em; color: #666;">ID: {{this.yulibProfile.user_id}}
-                        | UUID: {{this.yulibProfile.uuid}}</span>
+        <div>
+           <strong><span class="yulib-widget-yulib-label-title">{{i18n "yulib_integration.connected"}}</span></strong><br>
+          <span class="yulib-widget-yulib-label">{{i18n "yulib_integration.app_user"}}:</span> {{this.yulibProfile.username}} <br>
+          <span
+            style="font-size: 0.8em; color: #666; display: flex; flex-direction: column; gap: 6px; max-width: 100%;">
+    <span style="display: flex; align-items: center; gap: 5px;">
+        Почта приложения: <strong>{{this.yulibProfile.email}}</strong>
+      <DButton
+        @icon="copy"
+        @action={{fn this.copyToClipboard this.yulibProfile.email}}
+        class="btn-flat btn-mini-copy"
+        @title="Копировать почту"
+      />
+    </span>
+</span>
 
-                    {{!-- === НОВЫЙ БЛОК: СТАТУС ПУШЕЙ === --}}
-                    {{!-- ВАЖНО: Проверяем, существует ли currentUser, чтобы не получить ошибку чтения null --}}
-                    {{#if this.currentUser}}
-                        <div style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; display: flex; align-items: center; gap: 8px;">
-                            {{#if this.currentUser.yulib_push_enabled}}
-                            {{!-- Если включено: Зеленая галочка --}}
-                                {{d-icon "bell" style="color: green;"}}
-                                <span style="color: #124026; font-weight: bold;">Push-уведомления активны</span>
-                            {{else}}
-                            {{!-- Если выключено: Колокольчик и кнопка --}}
-                                {{d-icon "bell-slash" style="color: #666;"}}
-                                <span style="color: #666;">Push-уведомления выключены</span>
+          {{!-- === НОВЫЙ БЛОК: СТАТУС ПУШЕЙ === --}}
+          {{!-- ВАЖНО: Проверяем, существует ли currentUser, чтобы не получить ошибку чтения null --}}
+          {{#if this.currentUser}}
+            <div
+              style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; display: flex; align-items: center; gap: 8px;">
+              {{#if this.currentUser.yulib_push_enabled}}
+              {{!-- Если включено: Зеленая галочка --}}
+                {{d-icon "bell" style="color: green;"}}
+                <strong><span class="yulib-widget-yulib-label-push-enabled">{{i18n "yulib_integration.push_enabled"}}</span></strong><br>
+              {{else}}
+              {{!-- Если выключено: Колокольчик и кнопка --}}
+                {{d-icon "bell-slash" style="color: #666;"}}
+                <span style="color: #666;">Push-уведомления выключены</span>
 
-                                <DButton
-                                        @label="yulib_integration.enablePush"
-                                        @action={{this.enablePush}}
-                                        class="btn-small btn-default"
-                                        style="margin-left: 5px;"
-                                />
-                            {{/if}}
-                        </div>
-                    {{/if}}
-                    {{!-- ==================================== --}}
-
-                </div>
-            </div>
-
-            <hr>
-
-            {{!-- 2. БЛОК БИБЛИОТЕКИ --}}
-            <h3>Моя библиотека</h3>
-
-            {{#if this.isLoadingBooks}}
-                <div class="spinner">Загрузка...</div>
-            {{else}}
-                <YulibBooksList @books={{this.books}} />
-            {{/if}}
-
-            <hr>
-            <div style="margin-top: 10px;">
                 <DButton
-                        @label="yulib_integration.btn_unlink"
-                        @action={{this.unlinkProfile}}
-                        @disabled={{this.isLoading}}
-                        class="btn-danger"
+                  @label="yulib_integration.enablePush"
+                  @action={{this.enablePush}}
+                  class="btn-small btn-default yulib-enable-push-btn"
+                  style="margin-left: 5px;"
                 />
+              {{/if}}
             </div>
-        {{else}}
+          {{/if}}
+          {{!-- ==================================== --}}
 
-            {{#if this.codeSent}}
-                <p>{{i18n "yulib_integration.code_sent"}}</p>
+        </div>
+      </div>
 
-                <Input @type="text" @value={{this.inputCode}} class="input-small" placeholder={{i18n
-                        "yulib_integration.placeholder_code"}} />
+      <hr>
 
-              <DButton @label="yulib_integration.btn_verify" @action={{this.verifyCode}} @disabled={{this.isLoading}} class="btn-primary"/>
-              <DButton @label="yulib_integration.btn_cancel" @action={{this.reset}} class="btn-flat"/>
-            {{else}}
-                <p class="description">{{i18n "yulib_integration.connect_description"}}</p>
-                <div style="margin-bottom: 10px;">
-                    <label style="font-weight: bold; margin-bottom: 5px;">Email в приложении:</label>
-                    <Input
-                            @type="text"
-                            @value={{this.appEmail}}
-                            class="input-xxlarge"
-                            placeholder="example@app.com"
-                    />
-                </div>
-                <DButton @label="yulib_integration.btn_connect" @action={{this.requestCode}}
-                         @disabled={{this.isLoading}} class="btn-primary"/>
-            {{/if}}
+      {{!-- 2. БЛОК БИБЛИОТЕКИ --}}
+      <h3>Моя библиотека</h3>
 
-        {{/if}}
+      {{#if this.isLoadingBooks}}
+        <div class="spinner">Загрузка...</div>
+      {{else}}
+        <YulibBooksList @books={{this.books}} />
+      {{/if}}
 
-        {{#if this.errorMessage}}
-            <div class="alert alert-error">{{this.errorMessage}}</div>
-        {{/if}}
-    </div>
+      <hr>
+      <div style="margin-top: 10px;">
+        <DButton
+          @label="yulib_integration.btn_unlink"
+          @action={{this.unlinkProfile}}
+          @disabled={{this.isLoading}}
+          class="btn-danger"
+        />
+      </div>
+    {{else}}
+
+      {{#if this.codeSent}}
+        <p>{{i18n "yulib_integration.code_sent"}}</p>
+
+        <Input @type="text" @value={{this.inputCode}} class="input-small" placeholder={{i18n
+          "yulib_integration.placeholder_code"}} />
+
+        <DButton @label="yulib_integration.btn_verify" @action={{this.verifyCode}} @disabled={{this.isLoading}}
+                 class="btn-primary"/>
+        <DButton @label="yulib_integration.btn_cancel" @action={{this.reset}} class="btn-flat"/>
+      {{else}}
+        <p class="description">{{i18n "yulib_integration.connect_description"}}</p>
+        <div style="margin-bottom: 10px;">
+          <label style="font-weight: bold; margin-bottom: 5px;">Email в приложении:</label>
+          <Input
+            @type="text"
+            @value={{this.appEmail}}
+            class="input-xxlarge"
+            placeholder="example@app.com"
+          />
+        </div>
+        <DButton @label="yulib_integration.btn_connect" @action={{this.requestCode}}
+                 @disabled={{this.isLoading}} class="btn-primary"/>
+      {{/if}}
+
+    {{/if}}
+
+    {{#if this.errorMessage}}
+      <div class="alert alert-error">{{this.errorMessage}}</div>
+    {{/if}}
+  </div>
 
 </div>

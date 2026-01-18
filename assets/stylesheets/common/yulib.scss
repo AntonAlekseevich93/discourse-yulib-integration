@@ -1,4 +1,3 @@
-
 /* ================================================= */
 /*  ИКОНКА ВЕРИФИКАЦИИ */
 /* ================================================= */
@@ -43,10 +42,10 @@
     fill: #0061ff !important;
   }
 }
+
 /* ================================================= */
 /* END ИКОНКА ВЕРИФИКАЦИИ */
 /* ================================================= */
-
 
 
 /* Находим контейнер контента */
@@ -245,15 +244,31 @@
     }
   }
 }
+
 /* ==================================================== */
 /* END КАРТОЧКА КНИГИ В НАСТРОЙКАХ */
 /* ==================================================== */
 
 
 /* ==================================================== */
-/* АВАТАР НА БАНЕРЕ  ПРИЛОЖЕНИЯ КОГДА НЕ ГРУЗИТСЯ URL ПОЛЬЗОВАТЕЛЯ */
+/* Виджет в профиле привязки приложения */
 /* ==================================================== */
-/* делаем аватарку-заглушку серой и полупрозрачной */
+.btn-mini-copy {
+  padding: 2px 4px !important;
+  height: auto !important;
+  line-height: 1 !important;
+  background: transparent !important;
+
+  .d-icon {
+    font-size: 0.9em !important;
+    color: var(--primary) !important;
+  }
+
+  &:hover .d-icon {
+    color: var(--tertiary) !important;
+  }
+}
+
 .yulib-user-avatar[src*="avatar.png"] {
   filter: grayscale(1) brightness(0.8);
   background: #000000;
@@ -261,16 +276,61 @@
   opacity: 0.7;
 }
 
-.alert.alert-success {
+.yulib-integration .alert.alert-success {
+  background-color: var(--success-low) !important;
   border-radius: 14px;
+  @media (prefers-color-scheme: dark) { // DARK THEME
+    background-color: #383838 !important;
+  }
 }
+
 
 .btn {
   border-radius: 10px;
 }
+
+.yulib-integration .controls span[style*="font-size: 0.8em"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 100%;
+  font-weight: 600;
+  font-size: 18px;
+
+  span {
+    flex-wrap: wrap;
+    word-break: break-all;
+    line-height: 1.4;
+    font-size: 14px;
+    color: var(--primary);
+
+  }
+}
+
+.yulib-integration .controls strong {
+  word-break: break-all;
+  color: var(--primary);
+  font-weight: 400;
+}
+
+.yulib-widget-yulib-label-title {
+  font-weight: 800 !important;
+  color: var(--primary);
+}
+
+.yulib-widget-yulib-label {
+  font-size: 14px;
+  font-weight: 600 !important;
+}
+
+.yulib-widget-yulib-label-push-enabled {
+//124026
+}
+
 /* ==================================================== */
-/* END АВАТАР НА БАНЕРЕ  ПРИЛОЖЕНИЯ КОГДА НЕ ГРУЗИТСЯ URL ПОЛЬЗОВАТЕЛЯ */
+/* END Виджет в профиле привязки приложения */
 /* ==================================================== */
+
 
 /* ==================================================== */
 /* Виджет на главной привязки приложения */
@@ -285,6 +345,11 @@
   max-width: 600px;
   background-color: var(--success-low);
   border: 1px solid var(--success-medium);
+
+  @media (prefers-color-scheme: dark) {
+    background-color: #171717 !important;
+    border: 0px;
+  }
 
   .yulib-widget-left {
     display: flex;
@@ -309,21 +374,26 @@
     color: var(--primary); /* Гарантируем, что цвет будет основным */
     font-size: 1.0em; /* Можно чуть увеличить для акцента */
   }
+
   .yulib-toggle-btn {
     padding: 6px;
-    margin-left: 16px;         /* Отступ от колокольчика */
+    margin-left: 16px; /* Отступ от колокольчика */
 
     .d-icon {
-      color: inherit;         /* Чтобы иконка наследовала цвет текста кнопки */
+      color: inherit; /* Чтобы иконка наследовала цвет текста кнопки */
     }
 
     &:hover {
       background: #9bd79b !important; /* Легкое затемнение при наведении */
       color: #000 !important;
+      @media (prefers-color-scheme: dark) {
+        background-color: #252525 !important;
+        border: 0px;
+      }
     }
 
     &:active {
-      transform: scale(0.9);  /* Эффект нажатия */
+      transform: scale(0.9); /* Эффект нажатия */
     }
   }
 
@@ -347,6 +417,7 @@
     }
   }
 }
+
 /* ==================================================== */
 /* END Виджет на главной привязки приложения */
 /* ==================================================== */
@@ -416,6 +487,7 @@
     color: #a9a9a9;
   }
 }
+
 /* ==================================================== */
 /* END Виджет на главной НЕ привязано (промо-виджет) */
 /* ==================================================== */
@@ -453,12 +525,14 @@
       color: var(--primary); /* Гарантируем, что цвет будет основным */
       font-size: 0.8em; /* Можно чуть увеличить для акцента */
     }
+
     .yulib-widget-user {
       color: var(--primary); /* Гарантируем, что цвет будет основным */
       font-size: 0.7em; /* Можно чуть увеличить для акцента */
     }
   }
 }
+
 /* ==================================================== */
 /* END БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах меньше 545px */
 /* ==================================================== */
@@ -471,6 +545,7 @@
     /* Скрываем правую часть (иконку статуса) */
     .yulib-widget-right {
       display: flex !important;
+
       > *:not(.yulib-toggle-btn) {
         display: none !important;
       }
@@ -498,10 +573,10 @@
 
     /* Стили для подзаголовка */
     .yulib-widget-user {
-      font-size: 0.75em;           /* Чуть меньше заголовка */
-      color: var(--primary-high);  /* Приглушенный серый цвет Discourse */
-      line-height: 1.2;            /* Плотный межстрочный интервал */
-      display: block;              /* Чтобы текст точно был на новой строке */
+      font-size: 0.75em; /* Чуть меньше заголовка */
+      color: var(--primary-high); /* Приглушенный серый цвет Discourse */
+      line-height: 1.2; /* Плотный межстрочный интервал */
+      display: block; /* Чтобы текст точно был на новой строке */
     }
 
     /* Центрируем иконку-заглушку вместо аватара */
@@ -518,6 +593,7 @@
     }
   }
 }
+
 /* ==================================================== */
 /* END БАННЕР НА ГЛАВНОЙ ПРИЛОЖЕНИЯ На экранах уже 490px */
 /* ==================================================== */
@@ -533,7 +609,7 @@
   margin: 0 auto 26px auto;
   max-width: fit-content;
   display: flex;
-  justify-content: center;   /* Центрируем всё содержимое внутри */
+  justify-content: center; /* Центрируем всё содержимое внутри */
   align-items: center;
 
   /* Убираем жадность левого блока, чтобы он не забирал всё пространство */
@@ -590,6 +666,7 @@
     border-radius: 20px; /* Сделаем его овальным, раз он по центру */
   }
 }
+
 /* ==================================================== */
 /* END СВЕРНУТЫЙ БАННЕР (COLLAPSED) */
 /* ==================================================== */
@@ -603,6 +680,7 @@
   margin-top: 0;
   padding-top: 5px;
 }
+
 .yulib-stats-neutral {
   /* --- ОСНОВНОЙ СТИЛЬ (Нейтральный) --- */
   background-color: var(--primary-very-low);
@@ -612,8 +690,8 @@
 
   /* По умолчанию: в строку */
   display: flex;
-  width: fit-content;    /* Контейнер не на всю ширину */
-  margin-left: auto;     /* Магия: толкает блок максимально вправо */
+  width: fit-content; /* Контейнер не на всю ширину */
+  margin-left: auto; /* Магия: толкает блок максимально вправо */
   margin-right: 0;
 
 
@@ -646,26 +724,50 @@
   &:hover {
     background-color: var(--primary-low);
     color: var(--primary);
+
     .y-item b {
       color: var(--primary);
     }
   }
 }
+
 /* ==================================================== */
 /* END СТАТИСТИКА ПРОЧИТАНО, ПЛАНИРУЕТЯ ПОД КАЖДЫМ СООБЩЕНИЕМ ПОЛЬЗОВАТЕЛЯ */
 /* ==================================================== */
 
+/* ==================================================== */
+/* КНОПКА ИНТЕГРАЦИЯ С ЮЛИБ В НАСТРОЙКАХ */
+/* ==================================================== */
 /* Стиль для кнопки в шапке профиля */
 .yulib-profile-btn {
   /* Твой цвет фона (например, оранжевый или фиолетовый) */
-  background-color: #258fff;
+  background-color: #2ecc71;
   color: #FFFFFF !important;
   border: none;
-
+  padding: 9px;
   /* Эффект при наведении */
   &:hover {
-    background-color: #1d64b0; /* Чуть темнее при наведении */
+    background-color: #27ae60; /* Чуть темнее при наведении */
     color: #ffffff;
+    @media (prefers-color-scheme: dark) {
+      background-color: #252525 !important;
+      border: 0px;
+    }
+  }
+
+  /* --- 2. СОСТОЯНИЕ "ПРИВЯЗАН" (Добавляем этот блок) --- */
+  &.is-connected {
+    background-color: var(--d-button-default-bg-color); /* Зеленый (Успех) */
+    color: var(--d-button-default-text-color) !important;
+    padding: 9px;
+
+    .d-icon {
+      color: var(--d-button-default-text-color);
+    }
+
+    &:hover {
+      background-color: #d7d6d6 /* Темно-зеленый при наведении */
+    }
   }
 
   /* Цвет иконки (книжки) */
@@ -673,3 +775,31 @@
     color: #ffffff;
   }
 }
+
+/* ==================================================== */
+/* END КНОПКА ИНТЕГРАЦИЯ С ЮЛИБ В НАСТРОЙКАХ */
+/* ==================================================== */
+
+
+/* ==================================================== */
+/* СТИЛЬ ТОЛЬКО ДЛЯ КНОПКИ ВКЛЮЧЕНИЯ ПУШЕЙ */
+/* ==================================================== */
+.yulib-enable-push-btn {
+  background: #a4f4a4;
+  @media (prefers-color-scheme: dark) {
+    background-color: #252424 !important;
+  }
+
+  &:hover {
+    background-color: #92db92 !important; // Цвет при наведении
+    @media (prefers-color-scheme: dark) {
+      background-color: #5b5a5a !important;
+    }
+  }
+
+}
+
+/* ==================================================== */
+/* END СТИЛЬ ТОЛЬКО ДЛЯ КНОПКИ ВКЛЮЧЕНИЯ ПУШЕЙ */
+/* ==================================================== */
+

@@ -156,10 +156,13 @@ after_initialize do
 
   # Чтобы фронтенд знал, включены ли пуши
   add_to_serializer(:user, :yulib_push_enabled) do
-    object.custom_fields['yulib_push_enabled'] == true
+    val = object.custom_fields['yulib_push_enabled']
+    val == 'true' || val == true
   end
+
   add_to_serializer(:current_user, :yulib_push_enabled) do
-    object.custom_fields['yulib_push_enabled'] == true
+    val = object.custom_fields['yulib_push_enabled']
+    val == 'true' || val == true
   end
   # END Чтобы фронтенд знал, включены ли пуши
 
