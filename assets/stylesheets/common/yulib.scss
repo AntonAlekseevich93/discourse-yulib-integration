@@ -729,6 +729,90 @@
       color: var(--primary);
     }
   }
+
+
+  /* Стили для кнопки информации и попапа */
+
+  .y-info-wrapper {
+    position: relative; /* Чтобы попап позиционировался относительно иконки */
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-left: 4px; /* Чуть отодвинем от цифр */
+  }
+
+  /* Сама круглая кнопка "i" */
+  .y-info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-medium);
+    color: var(--primary-medium);
+    font-family: serif; /* Шрифт с засечками для красивой "i" */
+    font-style: italic;
+    font-weight: bold;
+    font-size: 11px;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+
+  /* Эффект при наведении на кнопку */
+  .y-info-wrapper:hover .y-info-icon,
+  .y-info-wrapper.active .y-info-icon {
+    background-color: var(--primary-medium);
+    color: var(--secondary); /* Цвет текста станет цветом фона страницы (контраст) */
+    border-color: var(--primary-medium);
+  }
+
+  /* Всплывающее облачко (скрыто по умолчанию) */
+  .y-info-popup {
+    display: none; /* Скрыто */
+    position: absolute;
+    bottom: 30px; /* Появляется СВЕРХУ от иконки */
+    right: -5px;  /* Выравнивание по правому краю */
+
+    width: 220px; /* Ширина текста */
+    padding: 10px;
+
+    background-color: var(--primary-high); /* Темный фон (инверсия) */
+    color: var(--secondary);               /* Светлый текст */
+
+    border-radius: 6px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    font-family: var(--font-family);
+    font-size: 12px;
+    font-weight: normal;
+    text-align: left;
+    z-index: 999;
+    line-height: 1.4;
+
+    /* Анимация появления */
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  /* Стрелочка у облачка снизу */
+  .y-info-popup::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    right: 8px; /* Стрелочка указывает на иконку */
+    border-width: 5px 5px 0;
+    border-style: solid;
+    border-color: var(--primary-high) transparent transparent transparent;
+  }
+
+  /* Когда класс active добавлен JS-ом -> Показываем */
+  .y-info-wrapper.active .y-info-popup {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* 👆👆👆 */
 }
 
 /* ==================================================== */
