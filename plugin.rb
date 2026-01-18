@@ -22,6 +22,7 @@ register_svg_icon "unlink"
 register_svg_icon "angle-down"
 register_svg_icon "angle-up"
 after_initialize do
+  Rails.logger.error "❌ ВНИМАНИЕ-1"
 
   class ::YulibBook < ActiveRecord::Base
     self.table_name = "yulib_books"
@@ -88,7 +89,6 @@ after_initialize do
     object.user&.yulib_book_stats
   end
 
-
   # 1. РЕГИСТРИРУЕМ ПОЛЯ В БАЗЕ (Типы данных)
   User.register_custom_field_type('yulib_external_user_id', :integer)
   User.register_custom_field_type('yulib_app_email', :string)
@@ -115,7 +115,6 @@ after_initialize do
     val == 'true' || val == true
   end
   # == END СВЕРНУТОСТЬ БАННЕРА НА ГЛАВНОЙ==
-
 
   # 2. БЕЛЫЙ СПИСОК ДЛЯ CURRENT USER (Чтобы данные жили после F5)
   # Мы будем отдавать их группой, но на всякий случай разрешим чтение
@@ -252,10 +251,11 @@ after_initialize do
       def sync_books_from_ktor(user, last_sync)
         token = user.custom_fields['yulib_token']
         return if token.blank?
+        forum_user_email = user.email
 
         begin
           base_url = SiteSetting.yulib_backend_url.chomp("/")
-          uri = URI("#{base_url}/api/books/delta?since=#{last_sync}")
+          uri = URI("#{base_url}/api/books/delta?since=#{last_sync}&forum_email=#{URI.encode_www_form_component(forum_user_email)}")
 
           req = Net::HTTP::Get.new(uri)
           req['Authorization'] = "Bearer #{token}"
@@ -289,31 +289,31 @@ after_initialize do
       def process_book_updates(user_id, books_array)
         records = books_array.map do |b|
           {
-            user_id:                  user_id,
-            book_id:                  b["bookId"],
-            author_id:                b["authorId"],
-            author_name:              b["authorName"],
-            book_name:                b["bookName"],
-            user_cover_url:           b["userCoverUrl"],
-            page_count:               b["pageCount"],
-            isbn:                     b["Isbn"],
-            reading_status:           b["readingStatus"],
-            age_restriction:          b["ageRestriction"],
-            book_genre_id:            b["bookGenreId"],
-            image_name:               b["imageName"],
-            start_date:               b["startDate"],
-            end_date:                 b["endDate"],
-            timestamp_of_creating:    b["timestampOfCreating"],
-            timestamp_of_updating:    b["timestampOfUpdating"],
-            external_user_id:         b["userId"],
+            user_id: user_id,
+            book_id: b["bookId"],
+            author_id: b["authorId"],
+            author_name: b["authorName"],
+            book_name: b["bookName"],
+            user_cover_url: b["userCoverUrl"],
+            page_count: b["pageCount"],
+            isbn: b["Isbn"],
+            reading_status: b["readingStatus"],
+            age_restriction: b["ageRestriction"],
+            book_genre_id: b["bookGenreId"],
+            image_name: b["imageName"],
+            start_date: b["startDate"],
+            end_date: b["endDate"],
+            timestamp_of_creating: b["timestampOfCreating"],
+            timestamp_of_updating: b["timestampOfUpdating"],
+            external_user_id: b["userId"],
             is_visible_for_all_users: b["isVisibleForAllUsers"] || true,
-            description:              b["description"],
-            image_folder_id:          b["imageFolderId"],
-            main_book_id:             b["mainBookId"],
-            publication_year:         b["publicationYear"],
+            description: b["description"],
+            image_folder_id: b["imageFolderId"],
+            main_book_id: b["mainBookId"],
+            publication_year: b["publicationYear"],
             timestamp_of_reading_done: b["timestampOfReadingDone"],
-            created_at:               Time.now,
-            updated_at:               Time.now
+            created_at: Time.now,
+            updated_at: Time.now
           }
         end
 
@@ -340,6 +340,7 @@ after_initialize do
       def enable_push
         user = current_user
         auth_token = user.custom_fields['yulib_token']
+        forum_email = user.email
 
         if auth_token.blank?
           return render json: { success: false, error: "Нет токена авторизации." }, status: 400
@@ -358,13 +359,15 @@ after_initialize do
         # ПОПЫТКА 2: Запрашиваем актуальный список у Ktor
         begin
           base_url = SiteSetting.yulib_backend_url.chomp("/")
-          uri = URI("#{base_url}/api/refresh-push-token")
+          uri = URI("#{base_url}/api/get-all-push-tokens")
 
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = (uri.scheme == "https")
           request = Net::HTTP::Post.new(uri)
           request["Authorization"] = "Bearer #{auth_token}" # Авторизация по токену
-          request["Content-Type"] = "application/json"
+          request.set_form_data({
+                                  "forum_email" => forum_email
+                                })
 
           response = http.request(request)
 
@@ -405,20 +408,12 @@ after_initialize do
       end
 
       def request_code
-        app_email = params[:app_email]       # Почта приложения (ввел юзер в поле)
-        forum_email = current_user.email     # Почта юзера на форуме
-        user_id = current_user.id
+        app_email = params[:app_email] # Почта приложения (ввел юзер в поле)
+        forum_email = current_user.email # Почта юзера на форуме
 
         if app_email.blank?
           return render json: { error: "Email required" }, status: 400
         end
-
-        # 1. Генерируем код
-        code = rand(100000..999999).to_s
-
-        # 2. Сохраняем в Redis Дискорса
-        redis_key = "yulib_auth_#{user_id}_#{app_email}"
-        Discourse.redis.setex(redis_key, 300, code)
 
         begin
           # 3. Отправляем всё на бэк
@@ -427,32 +422,29 @@ after_initialize do
 
           # Передаем ТРИ параметра: обе почты и сам код
           response = Net::HTTP.post_form(uri,
-                                         'app_email'   => app_email,
-                                         'forum_email' => forum_email,
-                                         'code'        => code
+                                         'app_email' => app_email,
+                                         'forum_email' => forum_email
           )
 
           if response.is_a?(Net::HTTPSuccess)
             Rails.logger.info "🚀 [YuLib] Code sent to Ktor. App: #{app_email}, Forum: #{forum_email}"
             render json: { success: true }
           else
-            Discourse.redis.del(redis_key)
             Rails.logger.error "❌ [YuLib] Backend error: #{response.code} - #{response.body}"
             render json: { success: false, error: "Backend failed" }, status: 502
           end
 
         rescue => e
-          Discourse.redis.del(redis_key)
           Rails.logger.error "❌ [YuLib] Connection error: #{e.message}"
           render json: { success: false, error: "Connection failed" }, status: 502
         end
       end
 
-
       def unlink
         # Нам не нужно искать юзера по email из параметров,
         # безопаснее работать с текущим авторизованным пользователем
         user = current_user
+        token = user.custom_fields['yulib_token']
         app_email = user.custom_fields['yulib_app_email']
         forum_email = user.email
 
@@ -465,11 +457,23 @@ after_initialize do
           base_url = SiteSetting.yulib_backend_url.chomp("/")
           uri = URI("#{base_url}/api/unlink")
 
-          # Передаем обе почты, чтобы бэк знал, кого именно отвязывать
-          response = Net::HTTP.post_form(uri,
-                                         'app_email'   => app_email,
-                                         'forum_email' => forum_email
+          # --- СЛОЖНЫЙ ЗАПРОС (чтобы передать Header) ---
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = (uri.scheme == "https")
+
+          # Создаем POST запрос
+          request = Net::HTTP::Post.new(uri)
+
+          # Добавляем заголовки
+          request['Authorization'] = "Bearer #{token}" if token.present?
+
+          # Добавляем данные формы
+          request.set_form_data(
+            'app_email' => app_email,
+            'forum_email' => forum_email
           )
+
+          response = http.request(request)
 
           if response.is_a?(Net::HTTPSuccess)
             # 2. Если бэк подтвердил (200 OK), чистим поля в Discourse
@@ -484,16 +488,16 @@ after_initialize do
             ::YulibIntegration::Pusher.unsubscribe(user)
             user.custom_fields['yulib_push_enabled'] = false # <--- Выключаем статус
             # --- ОЧИСТКА ПОЛЕЙ ЮЗЕРА ---
-            user.custom_fields['yulib_external_user_id']      = nil
-            user.custom_fields['yulib_app_email']    = nil
-            user.custom_fields['yulib_token']        = nil
+            user.custom_fields['yulib_external_user_id'] = nil
+            user.custom_fields['yulib_app_email'] = nil
+            user.custom_fields['yulib_token'] = nil
             user.custom_fields['yulib_app_username'] = nil
-            user.custom_fields['yulib_user_avatar']   = nil
-            user.custom_fields['yulib_user_uuid']     = nil
+            user.custom_fields['yulib_user_avatar'] = nil
+            user.custom_fields['yulib_user_uuid'] = nil
 
             # Важно: сбрасываем время последней синхронизации,
             # чтобы при новой привязке скачались все данные (since=0)
-            user.custom_fields['yulib_last_sync_at']     = nil
+            user.custom_fields['yulib_last_sync_at'] = nil
 
             user.save_custom_fields
 
@@ -520,19 +524,17 @@ after_initialize do
         # -----------------
 
         app_email = params[:app_email]
+        forum_email = current_user.email
+        forum_user_id = current_user.id
         input_code = params[:code]
-        user_id = current_user.id
         user = current_user
-        # --- Токен пушей от приложения ---
-        push_token = params[:push_token]
 
-        # 1. Проверка кода в Redis
-        redis_key = "yulib_auth_#{user_id}_#{app_email}"
-        stored_code = Discourse.redis.get(redis_key)
-
-        if stored_code.nil? || input_code != stored_code
+        if app_email.blank? || input_code.blank?
           return render json: { success: false, error: "Invalid or expired code" }, status: 403
         end
+
+        # Объявляем переменную заранее, чтобы она была видна в блоке сохранения внизу
+        external_data = nil
 
         # 2. ПОЛУЧЕНИЕ ДАННЫХ (БЭК ИЛИ МОК)
         if use_mock
@@ -550,7 +552,7 @@ after_initialize do
             base_url = SiteSetting.yulib_backend_url.chomp("/")
             uri = URI("#{base_url}/api/verify-user")
             # Отправляем только email и код
-            response = Net::HTTP.post_form(uri, 'email' => app_email, 'code' => input_code)
+            response = Net::HTTP.post_form(uri, 'app_email' => app_email, 'forum_user_id' => forum_user_id, 'forum_email' => forum_email, 'code' => input_code)
 
             if response.is_a?(Net::HTTPSuccess)
               data = JSON.parse(response.body)
@@ -586,51 +588,104 @@ after_initialize do
               avatar_host = SiteSetting.yulib_avatar_host.chomp("/")
               # avatar_url
               external_data = {
-                user_id:  data["id"],
-                email:    data["email"],
-                token:    data["token"],
+                user_id: data["id"],
+                email: data["email"],
+                token: data["token"],
                 username: data["username"],
-                avatar:   "#{avatar_host}/#{data["uuid"]}.jpg",
-                uuid:     data["uuid"]
+                avatar: "#{avatar_host}/#{data["uuid"]}.jpg",
+                uuid: data["uuid"]
               }
+
             else
-              return render json: { success: false, error: "Backend returned #{response.code}" }, status: 502
+              # === ВЕТКА ОШИБКИ ===
+
+              # 1. Лечим кодировку для логов (чтобы не было краша ASCII-8BIT)
+              error_body = response.body.to_s.force_encoding("UTF-8")
+              if !error_body.valid_encoding?
+                error_body = error_body.encode("UTF-16be", :invalid => :replace, :replace => "?").encode('UTF-8')
+              end
+
+              Rails.logger.error "❌ [YuLib] Backend error: #{response.code} - #{error_body}"
+
+              # 2. Инициализируем NULL.
+              # Если останется nil, твой JS сработает по логике статуса (403 -> "Неверный код")
+              user_error_msg = nil
+
+              # 3. Пытаемся достать текст. Если бэк прислал JSON с error, JS покажет этот текст.
+              begin
+                json_resp = JSON.parse(error_body)
+                if json_resp['error'].present?
+                  user_error_msg = json_resp['error']
+                elsif json_resp['message'].present?
+                  user_error_msg = json_resp['message']
+                end
+              rescue
+                # Если это просто текст и он не пустой (и не HTML портянка)
+                if error_body.present? && error_body.length < 200
+                  user_error_msg = error_body
+                end
+              end
+
+              # 4. БЕРЕМ РЕАЛЬНЫЙ СТАТУС (например, 403)
+              frontend_status = response.code.to_i
+              # Защита: если статус вдруг успешный (200), но мы в else, ставим 502
+              frontend_status = 502 if frontend_status < 400
+
+              # Возвращаем JSON и ВЫХОДИМ (return), чтобы не пытаться сохранить пустые данные
+              return render json: { success: false, error: user_error_msg }, status: frontend_status
             end
+
           rescue => e
-            Rails.logger.error "❌ [YuLib] API ERROR: #{e.class} - #{e.message}"
-            return render json: { success: false, error: "Connection failed: #{e.message}" }, status: 502
+            # Лечим кодировку сообщения об ошибке (тоже может крашнуть)
+            safe_msg = e.message.to_s.force_encoding("UTF-8")
+            if !safe_msg.valid_encoding?
+              safe_msg = safe_msg.encode("UTF-16be", :invalid => :replace).encode('UTF-8')
+            end
+
+            Rails.logger.error "❌ [YuLib] API ERROR: #{e.class} - #{safe_msg}"
+            return render json: { success: false, error: "Connection failed: #{safe_msg}" }, status: 502
           end
         end
 
         # 3. СОХРАНЕНИЕ В DISCOURSE
+        # Сюда мы попадаем ТОЛЬКО если use_mock=true ИЛИ если HTTPSuccess (успешный ответ).
+        # При ошибке выше срабатывает return.
         if user && external_data
-          user.custom_fields['yulib_external_user_id']      = external_data[:user_id]
-          user.custom_fields['yulib_app_email']    = external_data[:email]
-          user.custom_fields['yulib_token']        = external_data[:token]
+          user.custom_fields['yulib_external_user_id'] = external_data[:user_id]
+          user.custom_fields['yulib_app_email'] = external_data[:email]
+          user.custom_fields['yulib_token'] = external_data[:token]
           user.custom_fields['yulib_app_username'] = external_data[:username]
-          user.custom_fields['yulib_user_avatar']   = external_data[:avatar]
-          user.custom_fields['yulib_user_uuid']     = external_data[:uuid]
+          user.custom_fields['yulib_user_avatar'] = external_data[:avatar]
+          user.custom_fields['yulib_user_uuid'] = external_data[:uuid]
+
           user.save_custom_fields
 
-          Discourse.redis.del(redis_key)
+          # Лог успешной привязки
+          Rails.logger.info "✅ [YuLib] User linked: Forum(#{forum_email}) <-> App(#{external_data[:email]})"
 
-          render json: { success: true, yulib_profile: external_data }
+          render json: {
+            success: true,
+            yulib_profile: external_data,
+            push_enabled: user.custom_fields['yulib_push_enabled'] == true
+          }
         else
+          # Сюда можно попасть, если Mock вернул пустоту, или какая-то логическая ошибка
           render json: { success: false, error: "User not found" }, status: 404
         end
       end
+
     end
   end
 
   Discourse::Application.routes.prepend do
     post "/yulib/request-code" => "yulib_integration/yulib#request_code"
-    post "/yulib/verify-code"  => "yulib_integration/yulib#verify_code"
-    get  "/yulib/books"        => "yulib_integration/yulib#list_books"
+    post "/yulib/verify-code" => "yulib_integration/yulib#verify_code"
+    get "/yulib/books" => "yulib_integration/yulib#list_books"
     # Добавляем маршрут для отвязки
-    post "/yulib/unlink"       => "yulib_integration/yulib#unlink"
+    post "/yulib/unlink" => "yulib_integration/yulib#unlink"
     post "/yulib/enable-push" => "yulib_integration/yulib#enable_push"
     # Это говорит Rails: "Для этой ссылки используй контроллер настроек пользователя"
     get "/u/:username/preferences/yulib" => "users#preferences", constraints: { username: /[^\/]+/ }
-    put  "/yulib/toggle-banner" => "yulib_integration/yulib#toggle_banner"
+    put "/yulib/toggle-banner" => "yulib_integration/yulib#toggle_banner"
   end
 end

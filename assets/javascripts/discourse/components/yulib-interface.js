@@ -142,7 +142,9 @@ export default class YulibInterface extends Component {
 
       this.yulibProfile = profile;
       this.currentUser.set("yulib_profile", profile);
-
+      if (result.push_enabled !== undefined) {
+        this.currentUser.set("yulib_push_enabled", result.push_enabled);
+      }
       this.codeSent = false;
 
       // Сразу подгружаем книги после успешной привязки!
@@ -151,9 +153,22 @@ export default class YulibInterface extends Component {
     } catch (error) {
       console.error("Ошибка в verifyCode:", error);
 
-      if (error.status === 403) {
+      // --- ИСПРАВЛЕНИЕ: Читаем текст ошибки с сервера ---
+      let serverError = null;
+
+      // Пытаемся достать текст из JSON ответа
+      if (error.jqXHR && error.jqXHR.responseJSON && error.jqXHR.responseJSON.error) {
+        serverError = error.jqXHR.responseJSON.error;
+      }
+
+      if (serverError) {
+        // Если сервер прислал текст — показываем его
+        this.errorMessage = serverError;
+      } else if (error.status === 403) {
+        // Фолбэк, если JSON не пришел, но статус 403
         this.errorMessage = "Неверный код";
       } else {
+        // Фолбэк для остальных ошибок (500, 502 и т.д.)
         this.errorMessage = "Произошла системная ошибка";
       }
     } finally {

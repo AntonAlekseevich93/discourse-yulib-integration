@@ -11,14 +11,14 @@ export default {
     // Загружаем Роут и его Шаблон (как делали раньше)
     try {
       YulibRoute =
-        require("discourse/plugins/yulib-integration/discourse/routes/user/preferences/yulib").default;
+        require("discourse/plugins/discourse-yulib-integration/discourse/routes/user/preferences/yulib").default;
     } catch (e) {
       console.error("❌ Route JS missing", e);
     }
 
     try {
       YulibTemplate =
-        require("discourse/plugins/yulib-integration/discourse/templates/user/preferences/yulib").default;
+        require("discourse/plugins/discourse-yulib-integration/discourse/templates/user/preferences/yulib").default;
     } catch (e) {
       console.error("❌ Route Template missing", e);
     }
@@ -26,7 +26,7 @@ export default {
     // Загружаем КОМПОНЕНТ и его Шаблон
     try {
       YulibComponent =
-        require("discourse/plugins/yulib-integration/discourse/components/yulib-interface").default;
+        require("discourse/plugins/discourse-yulib-integration/discourse/components/yulib-interface").default;
       console.log("✅ Component JS loaded");
     } catch (e) {
       console.error("❌ Component JS missing", e);
@@ -35,13 +35,13 @@ export default {
     try {
       // Шаблоны компонентов лежат в templates/components/
       YulibComponentTemplate =
-        require("discourse/plugins/yulib-integration/discourse/templates/components/yulib-interface").default;
+        require("discourse/plugins/discourse-yulib-integration/discourse/templates/components/yulib-interface").default;
       console.log("✅ Component Template loaded");
     } catch (e) {
       // Иногда путь бывает другим, попробуем альтернативный (без templates)
       try {
         YulibComponentTemplate =
-          require("discourse/plugins/yulib-integration/discourse/components/yulib-interface").default;
+          require("discourse/plugins/discourse-yulib-integration/discourse/components/yulib-interface").default;
       } catch (e2) {
         console.error("❌ Component Template missing", e);
       }
@@ -50,12 +50,12 @@ export default {
     // ЗАГРУЗКА НОВОГО КОМПОНЕНТА (BOOKS LIST)
     let YulibBooksListComponent, YulibBooksListTemplate;
     try {
-      YulibBooksListComponent = require("discourse/plugins/yulib-integration/discourse/components/yulib-books-list").default;
-      YulibBooksListTemplate = require("discourse/plugins/yulib-integration/discourse/components/yulib-books-list").default; // Ember ищет шаблон там же, если это collocated component, но лучше проверить путь templates/components/...
+      YulibBooksListComponent = require("discourse/plugins/discourse-yulib-integration/discourse/components/yulib-books-list").default;
+      YulibBooksListTemplate = require("discourse/plugins/discourse-yulib-integration/discourse/components/yulib-books-list").default; // Ember ищет шаблон там же, если это collocated component, но лучше проверить путь templates/components/...
     } catch (e) {
       // Для шаблона путь может отличаться
       try {
-        YulibBooksListTemplate = require("discourse/plugins/yulib-integration/discourse/templates/components/yulib-books-list").default;
+        YulibBooksListTemplate = require("discourse/plugins/discourse-yulib-integration/discourse/templates/components/yulib-books-list").default;
       } catch(e2) { console.error("Books List Template missing"); }
     }
     // КОНЕЦ НОВОГО КОМПОНЕНТА (BOOKS LIST)
