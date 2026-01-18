@@ -81,6 +81,11 @@ after_initialize do
     object.yulib_book_stats
   end
 
+  add_to_serializer(:user_card, :yulib_stats) do
+    object.yulib_book_stats
+  end
+  allow_public_user_custom_field :yulib_stats
+
   add_to_serializer(:post, :yulib_stats) do
     object.user&.yulib_book_stats
   end
