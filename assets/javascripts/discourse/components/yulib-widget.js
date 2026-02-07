@@ -28,7 +28,7 @@ export default class YulibWidget extends Component {
         }
 
         // Дальше код выполняется только если this.currentUser существует
-        console.log("=== YULIB DEBUG (User exists) ===");
+        console.log("=== YULIB (User exists) ===");
 
         // Теперь можно обращаться без опаски
         const fromRoot = this.currentUser.yulib_banner_collapsed;

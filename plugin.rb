@@ -536,6 +536,7 @@ after_initialize do
         app_email = params[:app_email]
         forum_email = current_user.email
         forum_user_id = current_user.id
+        forum_user_name = current_user.username
         input_code = params[:code]
         user = current_user
 
@@ -562,7 +563,14 @@ after_initialize do
             base_url = SiteSetting.yulib_backend_url.chomp("/")
             uri = URI("#{base_url}/api/verify-user")
             # Отправляем только email и код
-            response = Net::HTTP.post_form(uri, 'app_email' => app_email, 'forum_user_id' => forum_user_id, 'forum_email' => forum_email, 'code' => input_code)
+            response = Net::HTTP.post_form(
+              uri,
+              'app_email' => app_email,
+              'forum_user_id' => forum_user_id,
+              'forum_email' => forum_email,
+              'forum_user_name' => forum_user_name,
+              'code' => input_code
+            )
 
             if response.is_a?(Net::HTTPSuccess)
               data = JSON.parse(response.body)
