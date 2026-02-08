@@ -151,7 +151,7 @@ module ::YulibIntegration
         end
 
       body = {
-        user_id: user.id,
+        user_id: user.custom_fields['yulib_external_user_id'].to_i,
         title: message_hash[:title].to_s,
         body: message_hash[:message].to_s,
         type: type,
