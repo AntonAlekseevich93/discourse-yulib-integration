@@ -12,7 +12,7 @@ module ::YulibIntegration
         message: payload[:excerpt],
         url: "#{Discourse.base_url}/#{payload[:post_url]}"
       }
-      self.send_notification(user, message)
+      self.send_notification(user, message, payload)
     end
 
     # Сохранение списка токенов (принимаем Array)
@@ -58,7 +58,7 @@ module ::YulibIntegration
     end
 
     # Основной метод рассылки
-    def self.send_notification(user, message_hash)
+    def self.send_notification(user, message_hash, payload = nil)
       return false unless user && message_hash
 
       # 1. Проверяем файл ключа
@@ -81,6 +81,9 @@ module ::YulibIntegration
 
       tokens_list = Array(tokens_list).compact.uniq
       return false if tokens_list.empty?
+
+      # 2. Отправляем запись о нотификации в бэкенд
+      self.send_backend_notification(user, message_hash, payload)
 
       fcm = FCM.new(SiteSetting.yulib_fcm_api_key, filename, SiteSetting.yulib_fcm_project_id)
 
@@ -135,6 +138,36 @@ module ::YulibIntegration
       else
         return false
       end
+    end
+
+    def self.send_backend_notification(user, message_hash, payload)
+      base_url = SiteSetting.yulib_backend_url.to_s.chomp("/")
+      return if base_url.empty?
+
+      type =
+        if payload && payload[:notification_type]
+          Notification.types[payload[:notification_type]].to_s
+        else
+          "unknown"
+        end
+
+      body = {
+        user_id: user.id,
+        title: message_hash[:title].to_s,
+        body: message_hash[:message].to_s,
+        type: type,
+        createdAt: (Time.now.to_f * 1000).to_i,
+        deeplink: message_hash[:url].to_s
+      }
+
+      uri = URI("#{base_url}/notifications/create")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = (uri.scheme == "https")
+      request = Net::HTTP::Post.new(uri.request_uri, "Content-Type" => "application/json")
+      request.body = JSON.generate(body)
+      http.request(request)
+    rescue => e
+      Rails.logger.error "❌ [YuLib] Backend notification failed for user #{user.username}: #{e.class} - #{e.message}"
     end
   end
 end
