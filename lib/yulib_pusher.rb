@@ -82,9 +82,6 @@ module ::YulibIntegration
       tokens_list = Array(tokens_list).compact.uniq
       return false if tokens_list.empty?
 
-      # 2. Отправляем запись о нотификации в бэкенд
-      self.send_backend_notification(user, message_hash, payload)
-
       fcm = FCM.new(SiteSetting.yulib_fcm_api_key, filename, SiteSetting.yulib_fcm_project_id)
 
       success_count = 0
@@ -134,6 +131,8 @@ module ::YulibIntegration
 
       if success_count > 0
         Rails.logger.info "🚀 [YuLib] Push sent to #{success_count} devices for #{user.username}"
+        # После отправки пушей, пишем запись о нотификации в бэкенд
+        self.send_backend_notification(user, message_hash, payload)
         return true
       else
         return false
@@ -163,6 +162,8 @@ module ::YulibIntegration
       uri = URI("#{base_url}/notifications/create")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = (uri.scheme == "https")
+      http.open_timeout = 2
+      http.read_timeout = 2
       request = Net::HTTP::Post.new(uri.request_uri, "Content-Type" => "application/json")
       request.body = JSON.generate(body)
       http.request(request)
