@@ -180,7 +180,14 @@ after_initialize do
 
   DiscourseEvent.on(:push_notification) do |user, payload|
     # Проверяем, есть ли у юзера токен и включены ли пуши в настройках
-    if SiteSetting.yulib_fcm_enabled? && user.custom_fields['yulib_push_token'].present?
+    if SiteSetting.yulib_fcm_enabled? && user.custom_fields['yulib_push_tokens'].present?
+      Rails.logger.info(
+        "📣 [YuLib] push_notification user_id=#{user.id} " \
+        "username=#{user.username} " \
+        "payload_username=#{payload[:username]} " \
+        "notification_type=#{payload[:notification_type]} " \
+        "topic_id=#{payload[:topic_id]} post_number=#{payload[:post_number]}"
+      )
       Jobs.enqueue(:send_yulib_push, user_id: user.id, payload: payload)
     end
   end
